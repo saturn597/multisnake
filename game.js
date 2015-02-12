@@ -1,27 +1,57 @@
 if (typeof module !== 'undefined' && module.exports)
   module.exports.Game = Game;
 
-var DIRECTIONS = {LEFT: 37, RIGHT: 39, UP: 38, DOWN: 40};
-
-var keyCodes = {
-38: DIRECTIONS.UP, 
-40: DIRECTIONS.DOWN,
-37: DIRECTIONS.LEFT,
-39: DIRECTIONS.RIGHT
-}
-
-
 function Game(blockWidth, canvasWidth, canvasHeight) {
+
+  this.DIRECTIONS = {LEFT: 37, RIGHT: 39, UP: 38, DOWN: 40};
+  var DIRECTIONS = this.DIRECTIONS;
+
   this.players = [];
+  
+  this.goals = [];
+
+  function addGoal() {
+    var nx = canvasWidth / blockWidth;
+    var ny = canvasHeight / blockWidth;
+
+    goals.push({x: Math.truncate(Math.random() * nx), y: Math.truncate(Math.random() * ny)});
+  }
+
+  this.onCollision = function(player1, player2) {};
 
   this.addPlayer = function(pieces, initD, index) {
     this.players[index] = new Player(pieces, initD, index); 
+    return this.players[index];
   } 
   
   this.tick = function() {
     /* Advance the game by one frame*/
-    for (var i = this.players.length - 1; i >= 0; i--) {
+    var i, j;
+    var collider;
+    var collisions = [];
+    for (i = this.players.length - 1; i >= 0; i--) {
       this.players[i].advance();
+    }
+
+    for (i = this.players.length - 1; i >= 0; i--) {
+      if (collided = this.hasCollision(this.players[i].pieces[0]))
+        collisions.push({collider: this.players[i], collided: collided});
+    }
+
+    if (collisions.length > 0)
+      this.onCollision(collisions);
+  }
+
+  this.hasCollision = function(piece) {
+    var i, j;
+    var testPiece;
+
+    for (i = this.players.length - 1; i >= 0; i--) {
+      for (j = this.players[i].pieces.length - 1; j >= 0; j--) {
+        testPiece = this.players[i].pieces[j];
+        if (piece !== testPiece && piece.x == testPiece.x && piece.y == testPiece.y)
+          return this.players[i];
+      }
     }
   }
 
@@ -47,15 +77,38 @@ function Game(blockWidth, canvasWidth, canvasHeight) {
 
     this.maxLen = 3;
 
+    this.infiniteSnake = true;
+
     this.getData = function() {
       return {"pieces": this.pieces, "direction": this.direction, "maxLen": this.maxLen};
     };
-      
+    
+    this.setDirection = function(d) {
+      switch (d) {
+        case DIRECTIONS.LEFT:
+          if (this.direction != DIRECTIONS.RIGHT)
+            this.direction = DIRECTIONS.LEFT;
+          break;
+        case DIRECTIONS.RIGHT:
+          if (this.direction != DIRECTIONS.LEFT)
+            this.direction = DIRECTIONS.RIGHT;
+          break;
+        case DIRECTIONS.UP:
+          if (this.direction != DIRECTIONS.DOWN)
+            this.direction = DIRECTIONS.UP;
+          break;
+        case DIRECTIONS.DOWN:
+          if (this.direction != DIRECTIONS.UP)
+            this.direction = DIRECTIONS.DOWN;
+          break;
+      }
+    };
+
     this.advance = function() {
       var newPiece;
       var lastPiece;
 
-      if (this.pieces.length < this.maxLen) {
+      if (this.pieces.length < this.maxLen || this.infiniteSnake) {
         lastPiece = this.pieces[this.pieces.length - 1];
         newPiece = {x: lastPiece.x, y: lastPiece.y};
       }

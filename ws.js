@@ -1,135 +1,119 @@
-var WebSocketServer = require('ws').Server, wss = new WebSocketServer({port: 8080});
-var gameModule = require('./game.js');
-var game = new gameModule.Game(5, 800, 600);
+var WebSocketServer = require('ws').Server, 
+  wss = new WebSocketServer({port: 8080}),
+  gameModule = require('./game.js'),
+  game = new gameModule.Game(5, 800, 600),
+   
+  connections = [],
+  initStates = [{x: 0, y: 0, d: game.DIRECTIONS.RIGHT}, {x: 800, y: 595, d: game.DIRECTIONS.LEFT}],
+  time = false,
+  timer,
+  minPlayers = 2,
+  maxPlayers = 2,
+  
+  endGame = false;
+  game.onCollision = function () {endGame = true};
 
+function init() {
+  console.log(connections);
+  for (var i = connections.length - 1; i >= 0; i--)
+    connections[i].sock.close();
+  connections = [];
+  time = false;
+  timer = void(0);
 
-//Can DIRECTIONS and keyCodes be factored out?
-var DIRECTIONS = {LEFT: 37, RIGHT: 39, UP: 38, DOWN: 40};
-
-var keyCodes = {
-  38: DIRECTIONS.UP, 
-  40: DIRECTIONS.DOWN,
-  37: DIRECTIONS.LEFT,
-  39: DIRECTIONS.RIGHT
+  game = new gameModule.Game(5, 800, 600),
+  endGame = false;
 }
 
-
-
-
-var counter = 0;  // When 3, tell clients to update state
-var connections = [];
-
-var currentIndex = 0;
-
-var locations = [{x: 0, y: 0}, {x: 0, y: 0}];
-var location_index = 0;
-function next_location() {
-  var loc = locations[location_index];  
-  location_index++;
-  if (location_index > locations.length - 1) location_index = 0;
-
-  return loc;
-}
-
-function serializeData(index, locations) {
-  var data = concat(index, [].concat.apply([], locations));
-  return new Uint16Array(data);
+function getPlayerInit(ind) {
+  var player = game.players[ind];
+  return {pieces: player.pieces, index: ind, direction: player.direction};
 }
 
 wss.on('connection', function(ws) {
-  var newIndex = currentIndex;
-  currentIndex++;
-  var newPieces = [locations[newIndex % locations.length]];
-  var newDirection = 38;
+  if (connections.length >= maxPlayers)
+    return;
 
-  var connection = {sock: ws, direction: 38, index: currentIndex};
+  var newIndex = connections.length,
+    newState = initStates[newIndex % initStates.length],
+    newPlayer = game.addPlayer([{x: newState.x, y: newState.y}], newState.d, newIndex);
+
+  var connection = {sock: ws, index: newIndex, player: newPlayer, replied: true};
   var msg;
   
-  var currentPlayer;
-
-  var newPlayer = {newPlayer: {pieces: newPieces, direction: 38, index: newIndex}};
-  game.addPlayer(newPieces, newDirection, newIndex); 
-
-  connection.player = game.players[newIndex];
+  if (connections.length === 0) {
+    timer = setTimeout(timesUp, 50);
+  }
 
   for (var i = connections.length - 1; i >= 0; i--) {
-    msg = JSON.stringify(newPlayer);
-    connections[i].sock.send(msg);
+    msg = JSON.stringify({newPlayer: newPlayer});
+    connections[i].sock.send(msg, function() {});
     
-    currentPlayer = game.players[connections[i].index];
-    msg = JSON.stringify({newPlayer: {pieces: connections[i].player.pieces, index: connections[i].player.index, direction: connections[i].player.direction}});
+    msg = JSON.stringify({newPlayer: getPlayerInit(i)});
     ws.send(msg);
   }
   
-  newPlayer['newPlayer'].you = true;
-  ws.send(JSON.stringify(newPlayer));
-
+  newPlayer.you = true;
+  ws.send(JSON.stringify({newPlayer: newPlayer}));
   connections.push(connection);
+  newPlayer.you = false;
   tick();
 
   ws.on('message', function(message) {
-    connection.player.direction = parseInt(message, 10); 
+    connection.player.setDirection(parseInt(message, 10));
+    connection.replied = true;
+    tick();
+  });
+
+  ws.on('close', function() {
+    tellAllClients(JSON.stringify({"toDelete": [connections.indexOf(connection)]})); //Can probably make this not a list
+    connections.splice(connections.indexOf(connection), 1); 
+    game.players.splice(game.players.indexOf(connection.player), 1);
+    if (connections.length === 0) {
+      clearTimeout(timer);
+      init();
+    }
     tick();
   });
 });
 
+
 function timesUp() {
+  time = true;
   tick();
 }
-setTimeout(timesUp, 50);
 
 function tick() {
-  counter++;
-  if (counter > connections.length) {
-    game.tick();
-    updateClients();
-    counter = 0;
-    setTimeout(timesUp, 50);
-  }
+  if (connections.length < minPlayers)
+    return;
+  if (connections.length == 0) return;
+  for (var i = connections.length - 1; i >= 0; i--)
+    if (!connections[i].replied) 
+      return;
+  if (!time)
+    return;
+  game.tick();
+  updateClients();
+  time = false;
+  if (!endGame) timer = setTimeout(timesUp, 50);
+  else init(); 
 }
 
 function updateClients() {
   var direction;
   var updates = [];
-  for (var i = 0, len = connections.length; i < connections.length; i++) {  //Simplify with array constructor
+  for (var i = 0, len = connections.length; i < connections.length; i++) {
     updates.push(connections[i].player.direction);
   }
   for (var i = connections.length - 1; i >= 0; i--) {
-    connections[i].sock.send(JSON.stringify({updates: updates, tick: true}));
+    connections[i].sock.send(JSON.stringify({updates: updates, tick: true}), function(e) {});
+    connections[i].replied = false;
   }
 }
 
-
-/*
-wss.on('connection', function(ws) {
-  console.log('connection');
-  
-  var timer = setTimeout(sendState, 50);
-  var left = false;
-
-
-  function sendState() {
-    var arr = new Uint8Array(1);
-    if (left) {
-      arr[0] = 39;
-      left = false;
-    } else {
-      arr[0] = 37;
-      left = true;
-    }
-    timer = setTimeout(sendState, 50);
-    ws.send(arr, {binary: true}, function(e) {
-      if (e) { 
-        console.log("Error encountered"); 
-        clearTimeout(timer);
-      }
-      });
+function tellAllClients(msg) {
+  for (var i = connections.length - 1; i >= 0; i--) {
+    connections[i].sock.send(msg, function(e) {});
   }
+}
 
-  ws.on('message', function(message) {
-    var buf = new Buffer(message);
-    var i = buf.readUInt8(0);
-    console.log('received: %s', i);
-  });
-});
-*/
