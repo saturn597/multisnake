@@ -48,17 +48,18 @@
           if (parsed.hasOwnProperty("newPlayer")) {
             console.log(msg.data);
             game.addPlayer(parsed["newPlayer"].pieces, parsed["newPlayer"].direction, parsed["newPlayer"].index);
-            if (parsed["newPlayer"].hasOwnProperty("you") && parsed["newPlayer"].you) {
-              myIndex = parsed["newPlayer"].index;
-              newDir = parsed["newPlayer"].direction;
-              $(document).keydown(function(e) {
-                var dir = keyCodes[e.keyCode];
-                if (dir) {
-                  e.preventDefault();
-                  newDir = dir;
-                }
-              });
-            }
+          }
+
+          if (parsed.hasOwnProperty("yourIndex")) {
+            myIndex = parsed["yourIndex"];
+            newDir = game.players[myIndex].direction;
+            $(document).keydown(function(e) {
+              var dir = keyCodes[e.keyCode];
+              if (dir) {
+                e.preventDefault();
+                newDir = dir;
+              }
+            });
           }
 
           if (parsed.hasOwnProperty("updates")) {
@@ -71,7 +72,6 @@
 
           if (parsed.hasOwnProperty("tick")) {
             if (parsed["tick"]) {
-              console.log("ticking");
               game.tick(); 
               draw(game.players, canvas);
               game.players[myIndex].setDirection(newDir);
