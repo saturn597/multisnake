@@ -1,103 +1,153 @@
+// set up modules
 var WebSocketServer = require('ws').Server, 
-  wss = new WebSocketServer({port: 8080}),
-  gameModule = require('./game.js'),
-  game = new gameModule.Game(5, 800, 600),
-   
-  connections = [],
-  initStates = [{x: 0, y: 0, d: game.DIRECTIONS.RIGHT}, {x: 800, y: 595, d: game.DIRECTIONS.LEFT}],
-  time = false,
-  timer,
+  wss = new WebSocketServer({port: 8080});
+
+var gameModule = require('./game.js'),
+  game = new gameModule.Game(5, 800, 600);
+
+// some useful "constants"
+var initStates = [{x: 0, y: 0, d: game.DIRECTIONS.RIGHT}, {x: 800, y: 595, d: game.DIRECTIONS.LEFT}],
   minPlayers = 2,
-  maxPlayers = 2,
-  
-  endGame = false;
-  game.onCollision = function () {endGame = true};
+  maxPlayers = 2;
 
-function init() {
-  console.log(connections);
-  for (var i = connections.length - 1; i >= 0; i--)
-    connections[i].sock.close();
-  connections = [];
+// and some state to keep track of
+var connections = [];
+var timer;
+var gameInProcess = true,
   time = false;
-  timer = void(0);
 
-  game = new gameModule.Game(5, 800, 600),
-  endGame = false;
+function handleCollision() {
+  gameInProcess = false;  // game ends on collision
+  init();
 }
 
-function getPlayerInit(ind) {
-  var player = game.players[ind];
-  return {pieces: player.pieces, index: ind, direction: player.direction};
+game.onCollision = handleCollision;
+
+
+function init() {
+  console.log("init called");
+  clearTimeout(timer);
+  for (var i = connections.length - 1; i >= 0; i--)
+    connections[i].sock.close();
+  time = false;
+  timer = void(0);
+  game.initialize();
+}
+
+
+function getPlayerData(index) {
+  var player = game.players[index];
+  return {pieces: player.pieces, index: index, direction: player.direction};
+}
+
+
+function addPlayer() {
+  var newIndex = connections.length,
+      newState = initStates[newIndex % initStates.length];
+
+  return game.addPlayer([{ x: newState.x, y: newState.y }], newState.d, newIndex);
+}
+
+
+function startGame(sockets) {
+  for (var i = sockets.length - 1; i >= 0; i--) {
+    ws = sockets[i]; 
+
+  } 
 }
 
 wss.on('connection', function(ws) {
+  // Callback for someone connecting to our server
+
   if (connections.length >= maxPlayers)
     return;
 
-  var newIndex = connections.length,
-    newState = initStates[newIndex % initStates.length],
-    newPlayer = game.addPlayer([{x: newState.x, y: newState.y}], newState.d, newIndex);
+  var newPlayer = addPlayer();
 
-  var connection = {sock: ws, index: newIndex, player: newPlayer, replied: true};
-  var msg;
+  var connection = {sock: ws, index: newPlayer.index, player: newPlayer, replied: true};
   
   if (connections.length === 0) {
+    gameInProcess = true;
+    console.log("game over now false");
     timer = setTimeout(timesUp, 50);
   }
 
+  // Tell everyone about the new player and tell the new player about everyone
   for (var i = connections.length - 1; i >= 0; i--) {
-    msg = JSON.stringify({newPlayer: newPlayer});
-    connections[i].sock.send(msg, function() {});
+    connections[i].sock.send(JSON.stringify({ newPlayer: newPlayer }),
+        function() {});
     
-    msg = JSON.stringify({newPlayer: getPlayerInit(i)});
-    ws.send(msg);
+    ws.send(JSON.stringify({ newPlayer: getPlayerData(i) }));
   }
   
   newPlayer.you = true;
   ws.send(JSON.stringify({newPlayer: newPlayer}));
   connections.push(connection);
   newPlayer.you = false;
-  tick();
+
+  tickIfReady();
 
   ws.on('message', function(message) {
+    // Messages we get from clients will tell us the direction they've most recently set their snake to move in
     connection.player.setDirection(parseInt(message, 10));
     connection.replied = true;
-    tick();
+
+    // We might be ready to advance a frame, if we've now received status updates from every player
+    tickIfReady();
   });
 
   ws.on('close', function() {
+    // If we lose the connection to someone, we need to tell everyone they are no longer in the game
     tellAllClients(JSON.stringify({"toDelete": [connections.indexOf(connection)]})); //Can probably make this not a list
     connections.splice(connections.indexOf(connection), 1); 
     game.players.splice(game.players.indexOf(connection.player), 1);
+  
     if (connections.length === 0) {
       clearTimeout(timer);
-      init();
+      timer = void(0);
+      time = false;
+      game.initialize();
     }
-    tick();
+
+    // We might now be ready to advance a frame, if we were waiting only on the client that just disconnected
+    tickIfReady();
   });
 });
 
 
 function timesUp() {
   time = true;
-  tick();
+  tickIfReady();
 }
 
-function tick() {
+
+function tickIfReady() {
+  // Advance the state of the game by one frame and notify our clients ONLY IF
+  //
+  // 1) we have sufficient players, 
+  // 2) we've received updated states from ALL clients (so we know whether players have changed direction) 
+  // 3) sufficient time has passed since the last update
+
   if (connections.length < minPlayers)
     return;
-  if (connections.length == 0) return;
+
   for (var i = connections.length - 1; i >= 0; i--)
     if (!connections[i].replied) 
       return;
+
   if (!time)
     return;
+
   game.tick();
   updateClients();
+  
+  if (!gameInProcess) return;  // calling game.tick() might have ended the game
+
+  // restart the timer
   time = false;
-  if (!endGame) timer = setTimeout(timesUp, 50);
-  else init(); 
+  timer = setTimeout(timesUp, 50);
 }
+
 
 function updateClients() {
   var direction;
@@ -110,6 +160,7 @@ function updateClients() {
     connections[i].replied = false;
   }
 }
+
 
 function tellAllClients(msg) {
   for (var i = connections.length - 1; i >= 0; i--) {

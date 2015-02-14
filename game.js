@@ -6,9 +6,10 @@ function Game(blockWidth, canvasWidth, canvasHeight) {
   this.DIRECTIONS = {LEFT: 37, RIGHT: 39, UP: 38, DOWN: 40};
   var DIRECTIONS = this.DIRECTIONS;
 
-  this.players = [];
-  
-  this.goals = [];
+  this.initialize = function() {
+    this.players = [];
+    this.goals = [];
+  }
 
   function addGoal() {
     var nx = canvasWidth / blockWidth;
@@ -140,5 +141,8 @@ function Game(blockWidth, canvasWidth, canvasHeight) {
       }
     };
   } 
+
+  this.initialize();
+
 }
 
