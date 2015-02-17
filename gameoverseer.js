@@ -21,6 +21,7 @@ function Connection(sock, player) {
 
   // whether we're waiting on this connection to give us information
   this.waiting = false;  
+
 }
 
 
@@ -31,8 +32,8 @@ function GameOverseer(sockets) {
   game.onCollision = handleCollision;
 
   // some useful constants
-  var initStates = [{x: 0, y: 0, d: game.DIRECTIONS.RIGHT}, {x: 800, y: 595, d: game.DIRECTIONS.LEFT}],
-    minPlayers = 2;
+  var initStates = [{x: 0, y: 0, d: game.DIRECTIONS.RIGHT}, {x: 800, y: 595, d: game.DIRECTIONS.LEFT},
+      {x: 400, y: 595, d: game.DIRECTIONS.UP}];  // snakes added to the game will be placed in these initial states
 
   // and some state to keep track of
   var connections = [];
@@ -41,19 +42,22 @@ function GameOverseer(sockets) {
       time = false;  // whether enough time has passed since the last frame to go to the next one
 
 
-  function handleCollision() {
-    console.log("collision detected");
-    gameInProcess = false;  // game ends on collision
-    init();
+  function handleCollision(collisions) {
+
+    for (var i = collisions.length - 1; i >= 0; i--) {
+      endConnection(connections[game.players.indexOf(collisions[i].collider)]);
+    }
+    if (game.countLiving() <= 1) endGame();
+
   }
 
-
-  function init() {
+  
+  function endGame() {
+    gameInProcess = false;
     clearTimeout(timer);
-    for (var i = connections.length - 1; i >= 0; i--)
-      connections[i].sock.close();
     time = false;
-    timer = void(0);
+    for (var i = connections.length - 1; i >= 0; i--)
+      endConnection(connections[i]);
     game.initialize();
   }
 
@@ -67,12 +71,9 @@ function GameOverseer(sockets) {
   function tickIfReady() {
     // Advance the state of the game by one frame and notify our clients ONLY IF
     //
-    // 1) we have sufficient players, 
-    // 2) we've received updated states from ALL clients (so we know whether players have changed direction) 
-    // 3) sufficient time has passed since the last update
+    // 1) we've received updated states from ALL clients (so we know whether players have changed direction) 
+    // 2) sufficient time has passed since the last update
 
-    if (connections.length < minPlayers)
-      return;
   
     for (var i = connections.length - 1; i >= 0; i--) {
       if (connections[i].waiting) 
@@ -83,7 +84,7 @@ function GameOverseer(sockets) {
       return;
 
     updateClients();  // currently updateClients must be done before game.tick
-    game.tick();      // since collisions destroy game info during game.tick
+    game.tick();      // due to the possible impact of collisions
     
     if (!gameInProcess) return;  // calling game.tick() might have ended the game
 
@@ -141,20 +142,35 @@ function GameOverseer(sockets) {
     });
 
     connection.sock.on('close', function() {
-      // If we lose the connection to someone, we need to tell everyone they are no longer in the game
-      tellAllClients(JSON.stringify({"toDelete": [connections.indexOf(connection)]})); //Can probably make this not a list
-      connections.splice(connections.indexOf(connection), 1); 
-      game.players.splice(game.players.indexOf(connection.player), 1);
-    
+      endConnection(connection);
+    });
+  } 
+
+
+  function endConnection(connection) {
+    var index = connections.indexOf(connection);
+    if (index > -1) {
+
+      // we're calling this from on close - so only works provided that the on close event isn't triggered
+      // when the socket is already closed
+      // Maybe add a check to see if the socket is already closed?
+      connection.close();
+
+      connections.splice(index, 1);
+      game.players.splice(index, 1);
+
       if (connections.length === 0) {
         clearTimeout(timer);
         gameInProcess = false;
       }
 
+      // If we lose the connection to someone, we need to tell everyone they are no longer in the game
+      tellAllClients(JSON.stringify({ "toDelete": [index] }));
+
       // We might be ready to advance a frame, if we were waiting only on the client that just disconnected
       tickIfReady();
-    });
-  } 
+    }  
+  }
   
 
   // create our Connection objects

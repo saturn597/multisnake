@@ -18,13 +18,23 @@ function Game(blockWidth, canvasWidth, canvasHeight) {
     goals.push({x: Math.truncate(Math.random() * nx), y: Math.truncate(Math.random() * ny)});
   }
 
-  this.onCollision = function(player1, player2) {};
+  this.onCollision = function(collisions) {};
 
   this.addPlayer = function(pieces, initD, index) {
     this.players[index] = new Player(pieces, initD, index); 
     return this.players[index];
   } 
   
+  this.countLiving = function() {
+    var count = 0;
+    for (var i = this.players.length - 1; i >= 0; i--) {
+      if (this.players[i].alive) {
+        count++;
+      }
+    }
+    return count;
+  }
+   
   this.tick = function() {
     /* Advance the game by one frame*/
     var i, j;
@@ -35,8 +45,10 @@ function Game(blockWidth, canvasWidth, canvasHeight) {
     }
 
     for (i = this.players.length - 1; i >= 0; i--) {
-      if (collided = this.hasCollision(this.players[i].pieces[0]))
+      if (collided = this.hasCollision(this.players[i].pieces[0])) {
+        this.players[i].kill();
         collisions.push({collider: this.players[i], collided: collided});
+      }
     }
 
     if (collisions.length > 0)
@@ -68,7 +80,10 @@ function Game(blockWidth, canvasWidth, canvasHeight) {
   }
 
   function Player(pieces, initD, index) {
+
     var speed = blockWidth;
+
+    this.alive = true;
 
     this.index = index;
 
@@ -140,6 +155,10 @@ function Game(blockWidth, canvasWidth, canvasHeight) {
         this.pieces.push(newPiece);
       }
     };
+
+    this.kill = function() {
+      this.alive = false;
+    }
   } 
 
   this.initialize();

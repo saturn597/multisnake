@@ -5,15 +5,18 @@ var WebSocketServer = require('ws').Server,
 var GameOverseer = require('./gameoverseer.js');
 
 var socketsNotPlaying = [];
-var targetPlayerCount = 2;
+var targetPlayerCount = 3;
 
 wss.on('connection', function(ws) {
-  // Callback for someone connecting to our server
   socketsNotPlaying.push(ws);
   if (socketsNotPlaying.length === targetPlayerCount) {
     new GameOverseer.GameOverseer(socketsNotPlaying);
     socketsNotPlaying = [];
   }
+
+  ws.on('close', function() {
+    socketsNotPlaying.splice(socketsNotPlaying.indexOf(ws), 1);
+  });
 });
 
-console.log("ready");
+console.log("ready to accept connections");
