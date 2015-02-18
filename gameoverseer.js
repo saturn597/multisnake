@@ -28,24 +28,25 @@ function Connection(sock, player) {
 function GameOverseer(sockets) {
   
   // set up our game
-  var game = new gameModule.Game(5, 800, 600);
+  var game = new gameModule.Game(5, 400, 300);
   game.onCollision = handleCollision;
 
   // some useful constants
-  var initStates = [{x: 0, y: 0, d: game.DIRECTIONS.RIGHT}, {x: 800, y: 595, d: game.DIRECTIONS.LEFT},
-      {x: 400, y: 595, d: game.DIRECTIONS.UP}];  // snakes added to the game will be placed in these initial states
+  var initStates = [{x: 0, y: 0, d: game.DIRECTIONS.RIGHT}, {x: 400, y: 295, d: game.DIRECTIONS.LEFT},
+      {x: 200, y: 295, d: game.DIRECTIONS.UP}];  // snakes added to the game will be placed in these initial states
 
   // and some state to keep track of
   var connections = [];
   var timer;  // timer for the delay between frames
-  var gameInProcess = true,
+  var gameInProgress = true,
       time = false;  // whether enough time has passed since the last frame to go to the next one
 
 
   function handleCollision(collisions) {
+    console.log("handle collisions");
 
     for (var i = collisions.length - 1; i >= 0; i--) {
-      endConnection(connections[game.players.indexOf(collisions[i].collider)]);
+      removeFromGame(connections[game.players.indexOf(collisions[i].collider)]);
     }
     if (game.countLiving() <= 1) endGame();
 
@@ -53,14 +54,14 @@ function GameOverseer(sockets) {
 
   
   function endGame() {
-    gameInProcess = false;
+    gameInProgress = false;
     clearTimeout(timer);
     time = false;
+    console.log("in end game");
     for (var i = connections.length - 1; i >= 0; i--)
-      endConnection(connections[i]);
+      removeFromGame(connections[i]);
     game.initialize();
   }
-
 
   function timesUp() {
     time = true;
@@ -86,7 +87,7 @@ function GameOverseer(sockets) {
     updateClients();  // currently updateClients must be done before game.tick
     game.tick();      // due to the possible impact of collisions
     
-    if (!gameInProcess) return;  // calling game.tick() might have ended the game
+    if (!gameInProgress) return;  // calling game.tick() might have ended the game
 
     // if the game didn't end, restart the timer
     time = false;
@@ -131,47 +132,53 @@ function GameOverseer(sockets) {
   
 
   function setConnectionListeners(connection) {
+    // sets the right listeners on the socket
 
-    connection.sock.on('message', function(message) {
+    // setting onmessage and onclose rather than just adding an event listener for now, since
+    // I don't think I'll need to listen to other events while a game is going on
+    
+    connection.sock.onmessage = function(message) {
       // Messages we get from clients will tell us the direction they've most recently set their snake to move in
-      connection.player.setDirection(parseInt(message, 10));
+      connection.player.setDirection(parseInt(message.data, 10));
       connection.waiting = false;
 
       // We might be ready to advance a frame, if we've now received status updates from every player
       tickIfReady();
-    });
+    };
 
-    connection.sock.on('close', function() {
-      endConnection(connection);
-    });
+    connection.sock.onclose = function() {
+      removeFromGame(connection);
+    };
   } 
 
-
-  function endConnection(connection) {
-    var index = connections.indexOf(connection);
-    if (index > -1) {
-
-      // we're calling this from on close - so only works provided that the on close event isn't triggered
-      // when the socket is already closed
-      // Maybe add a check to see if the socket is already closed?
-      connection.close();
+  var _this = this;  // do something better about this
+  function removeFromGame(connection) {
+    var index = connections.indexOf(connection);  
+    console.log(index);
+    if (index > -1) {  // do I need this check?
 
       connections.splice(index, 1);
       game.players.splice(index, 1);
 
       if (connections.length === 0) {
         clearTimeout(timer);
-        gameInProcess = false;
+        gameInProgress = false;
       }
 
-      // If we lose the connection to someone, we need to tell everyone they are no longer in the game
-      tellAllClients(JSON.stringify({ "toDelete": [index] }));
+      // If we lose the connection to someone, we need to tell everyone they are no longer in the game -
+      // but don't bother if the game is over anyway
+      if (gameInProgress) tellAllClients(JSON.stringify({ "toDelete": [index] }));
+
+      _this.onRemoveFromGame(connection.sock);
 
       // We might be ready to advance a frame, if we were waiting only on the client that just disconnected
       tickIfReady();
     }  
   }
-  
+
+  this.onRemoveFromGame = function(socket) {
+     
+  }
 
   // create our Connection objects
   for (var socketNum = sockets.length - 1; socketNum >= 0; socketNum--) {
@@ -192,7 +199,7 @@ function GameOverseer(sockets) {
     connections[i].send(JSON.stringify({ "yourIndex": connections[i].index }));
   }
 
-  gameInProcess = true;
+  gameInProgress = true;
   timer = setTimeout(timesUp, 50);
 
 }
