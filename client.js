@@ -8,17 +8,29 @@ var keyCodes = {
 }
 
 var socket;
-
 $('document').ready(function() {
   socket = new WebSocket("ws://localhost:8080/");
   socket.onmessage = function(msg) {
+    if (msg.data == "startGame") {
+      $("#gameList").css("visibility", "hidden"); 
+      startGame();
+      return;
+    }
+    console.log(msg.data);
     var parsed = JSON.parse(msg.data);
     if (parsed.hasOwnProperty("games")) {
+      // receiving a summary of games that are currently available
       var games = parsed.games;
       for (var i = games.length - 1; i >= 0; i--) {
         $("#gameList").append(createGameLink(i, games[i].name, games[i].waitingCount));
         $("#gameList").append($("<br> /"));
       }
+    }
+    if (parsed.hasOwnProperty("newCount")) {
+      console.log("received new count");
+      // a newCount message contains the game we're updating at [0] and the new count at [1]
+      var info = parsed.newCount;
+      setGameCount(info[0], info[1]);
     }
   };
 });
@@ -44,17 +56,16 @@ function createGameLink(num, name, count) {
   return a;
 }
 
-function setCount(num, count) {
+function setGameCount(num, count) {
   $("#gameCount" + num).text(count);  // maybe use an array of these instead of identifying them by id
 }
 
 function joinGame(gameNum) {
   console.log("sending join");
   socket.send(JSON.stringify({"join": gameNum}));
-  playGame();
 }
 
-function playGame() {
+function startGame() {
 
   var gameInProgress = true;
 

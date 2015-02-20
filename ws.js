@@ -6,9 +6,8 @@ var WebSocketServer = require('ws').Server,
 var GameOverseer = require('./gameoverseer.js');
 
 var potentialGames = [ 
-{ name: "2 players!", targetPlayerCount: 2, waitingToPlay: [] }, 
-{ name: "3 players!", targetPlayerCount: 3, waitingToPlay: [] },
-{ name: "4 players!", targetPlayerCount: 4, waitingToPlay: [] }
+  { name: "2 players!", targetPlayerCount: 2, waitingToPlay: [] }, 
+  { name: "3 players!", targetPlayerCount: 3, waitingToPlay: [] }
 ];
 
 var socketsNotPlaying = [];
@@ -23,20 +22,38 @@ wss.on('connection', function(ws) {
 });
 
 function sendGameInfo(sock) {
-
   // wrap up the information we want to send about the currently available games
-  var toSend = JSON.stringify({ "games": potentialGames.map(function(item) { 
-    // this is confusing, make it more comprehensible
-    return {
-      name: item.name, 
-      targetPlayerCount: item.targetPlayerCount, 
-      waitingCount: item.waitingToPlay.length 
+  
+  sock.send(JSON.stringify(
+    { "games": potentialGames.map(gameInfoToSend) } 
+  ));
+
+}
+
+function gameInfoToSend(game) {
+  return {
+    name: game.name,
+    targetPlayerCount: game.targetPlayerCount,
+    waitingCount: game.waitingToPlay.length
+  }
+}
+
+function removeSocketFromPotentialGames(socket) {
+  for (var i = potentialGames.length - 1; i >= 0; i--) {
+    var index = potentialGames[i].waitingToPlay.indexOf(socket);
+    if (index > -1) { 
+      potentialGames[i].waitingToPlay.splice(index, 1);
+      announceNewCount(i, potentialGames[i].waitingToPlay.length);  // tell everyone if we're removing someone
     }
   }
-  )});
+}
 
-  sock.send(toSend);
+function announceNewCount(gameNumber, count) {
+  tellSockets(JSON.stringify({ newCount: [ gameNumber, count ] }), socketsNotPlaying);
+}
 
+function tellSockets(msg, sockets) {  // use this instead of tellAllClients in gameoverseer too
+  sockets.forEach(function(socket) { socket.send(msg); });
 }
 
 function respondToMsg(msg) {
@@ -44,12 +61,20 @@ function respondToMsg(msg) {
   var parsed = JSON.parse(msg.data);
   if (parsed.hasOwnProperty('join')) {
     console.log("join received");
-    var desiredGame = potentialGames[parsed.join];
-    desiredGame.waitingToPlay.push(this);
-    if (desiredGame.waitingToPlay.length == desiredGame.targetPlayerCount) {
-      console.log("beginning game");
-      var gameOverseer = new GameOverseer.GameOverseer(desiredGame.waitingToPlay);
+    
+    var gameIndex = parsed.join;  // the index of the game the socket wants to join
+    var desiredGame = potentialGames[gameIndex]; // the game at that index
 
+    removeSocketFromPotentialGames(this);  // only be in one game at a time
+    desiredGame.waitingToPlay.push(this);
+
+    announceNewCount(gameIndex, desiredGame.waitingToPlay.length);
+
+    if (desiredGame.waitingToPlay.length == desiredGame.targetPlayerCount) {
+      // if we have enough players, actually start the game
+      console.log("beginning game");
+      tellSockets("startGame", desiredGame.waitingToPlay);
+      var gameOverseer = new GameOverseer.GameOverseer(desiredGame.waitingToPlay);
       gameOverseer.onRemoveFromGame = function (socket) {
         console.log("calling onRemoveFromGame");
         // if a socket that's still connected gets removed from the game,
@@ -57,7 +82,6 @@ function respondToMsg(msg) {
         // a new game
         if (socket.readyState == WebSocket.OPEN) setSocketListeners(socket);
       };
-
       desiredGame.waitingToPlay = [];
     }
   }
@@ -66,14 +90,8 @@ function respondToMsg(msg) {
 function respondToClose() {
   socketsNotPlaying.splice(socketsNotPlaying.indexOf(this), 1);
 
-  // if client has requested to join a game, we should remove them from that game
-  for (var i = potentialGames.length - 1; i >= 0; i--) {
-    var index = potentialGames[i].waitingToPlay.indexOf(this);
-    if (index > -1) { 
-      potentialGames[i].waitingToPlay.splice(index, 1);
-    }
-  }
-
+  // if client joined a potential game, we should remove them from that game
+  removeSocketFromPotentialGames(this);
 }
 
 function setSocketListeners(socket) {
