@@ -23,7 +23,15 @@ function Game(blockWidth, canvasWidth, canvasHeight) {
   this.addPlayer = function(pieces, initD, index) {
     this.players[index] = new Player(pieces, initD, index); 
     return this.players[index];
+  }
+
+  this.removePlayer = function(player) {
+    this.players.splice(this.players.indexOf(player), 1);
   } 
+
+  this.getPlayer = function(index) {
+    return this.players.find(function (player) { return player.index == index });
+  }
   
   this.countLiving = function() {
     var count = 0;
@@ -40,10 +48,13 @@ function Game(blockWidth, canvasWidth, canvasHeight) {
     var i, j;
     var collider;
     var collisions = [];
+
+    // advance each player
     for (i = this.players.length - 1; i >= 0; i--) {
       this.players[i].advance();
     }
 
+    // check for collisions
     for (i = this.players.length - 1; i >= 0; i--) {
       if (collided = this.hasCollision(this.players[i].pieces[0])) {
         this.players[i].kill();
@@ -121,18 +132,24 @@ function Game(blockWidth, canvasWidth, canvasHeight) {
     };
 
     this.advance = function() {
+      if (!this.alive) return;
+
       var newPiece;
       var lastPiece;
 
+      // create a new "piece" to add to the snake if it's less than max size
       if (this.pieces.length < this.maxLen || this.infiniteSnake) {
         lastPiece = this.pieces[this.pieces.length - 1];
         newPiece = {x: lastPiece.x, y: lastPiece.y};
       }
 
+      // advance the snake's "tail" (everything but the head)
+      // can this be avoided?
       for (var i = this.pieces.length - 1; i > 0; i--) {
         this.pieces[i] = {x: this.pieces[i - 1].x, y: this.pieces[i - 1].y};
       }
-      
+     
+      // advance the head of the snake (the leading "piece")
       switch (this.direction) {
         case DIRECTIONS.UP:
           this.pieces[0].y -= speed; 
@@ -147,7 +164,8 @@ function Game(blockWidth, canvasWidth, canvasHeight) {
           this.pieces[0].x += speed;
           break;
       }
-
+      
+      // if we're exceeding this height/width of the canvas, wrap around
       this.pieces[0].x = wrap(this.pieces[0].x, 0, canvasWidth);
       this.pieces[0].y = wrap(this.pieces[0].y, 0, canvasHeight);
 

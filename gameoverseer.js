@@ -28,7 +28,7 @@ function Connection(sock, player) {
 function GameOverseer(sockets) {
   
   // set up our game
-  var game = new gameModule.Game(5, 400, 300);
+  var game = new gameModule.Game(5, 800, 600);
   game.onCollision = handleCollision;
 
   // some useful constants
@@ -46,7 +46,7 @@ function GameOverseer(sockets) {
     console.log("handle collisions");
 
     for (var i = collisions.length - 1; i >= 0; i--) {
-      removeFromGame(connections[game.players.indexOf(collisions[i].collider)]);
+      //removeFromGame(connections[game.players.indexOf(collisions[i].collider)]);
     }
     if (game.countLiving() <= 1) endGame();
 
@@ -85,8 +85,8 @@ function GameOverseer(sockets) {
       return;
 
     updateClients();  // currently updateClients must be done before game.tick
-    game.tick();      // due to the possible impact of collisions
-    
+    game.tick();      // since collisions during game.tick can remove clients
+
     if (!gameInProgress) return;  // calling game.tick() might have ended the game
 
     // if the game didn't end, restart the timer
@@ -97,10 +97,7 @@ function GameOverseer(sockets) {
 
   function updateClients() {
     var direction;
-    var updates = [];
-    for (var i = 0, len = connections.length; i < connections.length; i++) {
-      updates.push(connections[i].player.direction);
-    }
+    var updates = connections.map(function(connection) { return [ connection.index, connection.player.direction ] } );
     for (var i = connections.length - 1; i >= 0; i--) {
       connections[i].send(JSON.stringify( {updates: updates, tick: true} ), function(e) {});
       connections[i].waiting = true;
@@ -157,8 +154,8 @@ function GameOverseer(sockets) {
     console.log(index);
     if (index > -1) {  // do I need this check?
 
-      connections.splice(index, 1);
-      game.players.splice(index, 1);
+      connections.splice(connections.indexOf(connection), 1);
+      game.getPlayer(connection.index).kill();
 
       if (connections.length === 0) {
         clearTimeout(timer);
@@ -167,7 +164,8 @@ function GameOverseer(sockets) {
 
       // If we lose the connection to someone, we need to tell everyone they are no longer in the game -
       // but don't bother if the game is over anyway
-      if (gameInProgress) tellAllClients(JSON.stringify({ "toDelete": [index] }));
+      if (gameInProgress) tellAllClients(JSON.stringify({ "kill": [index] }));
+
 
       _this.onRemoveFromGame(connection.sock);
 

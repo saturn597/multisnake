@@ -1,3 +1,5 @@
+// TODO: Make it so clients can start a new game after they finish one again
+
 // set up modules
 var WebSocket = require('ws');
 var WebSocketServer = require('ws').Server, 
@@ -5,7 +7,8 @@ var WebSocketServer = require('ws').Server,
 
 var GameOverseer = require('./gameoverseer.js');
 
-var potentialGames = [ 
+var potentialGames = [
+  { name: "1 player!", targetPlayerCount: 1, waitingToPlay: [] },
   { name: "2 players!", targetPlayerCount: 2, waitingToPlay: [] }, 
   { name: "3 players!", targetPlayerCount: 3, waitingToPlay: [] }
 ];
@@ -49,6 +52,7 @@ function removeSocketFromPotentialGames(socket) {
 }
 
 function announceNewCount(gameNumber, count) {
+  console.log("socketsNotPlaying.length: " + socketsNotPlaying.length);
   tellSockets(JSON.stringify({ newCount: [ gameNumber, count ] }), socketsNotPlaying);
 }
 
@@ -68,22 +72,25 @@ function respondToMsg(msg) {
     removeSocketFromPotentialGames(this);  // only be in one game at a time
     desiredGame.waitingToPlay.push(this);
 
-    announceNewCount(gameIndex, desiredGame.waitingToPlay.length);
-
     if (desiredGame.waitingToPlay.length == desiredGame.targetPlayerCount) {
       // if we have enough players, actually start the game
+      
       console.log("beginning game");
       tellSockets("startGame", desiredGame.waitingToPlay);
+
+      desiredGame.waitingToPlay.forEach(function(socket) { socketsNotPlaying.splice(socketsNotPlaying.indexOf(socket), 1) });
       var gameOverseer = new GameOverseer.GameOverseer(desiredGame.waitingToPlay);
       gameOverseer.onRemoveFromGame = function (socket) {
-        console.log("calling onRemoveFromGame");
-        // if a socket that's still connected gets removed from the game,
-        // we'll want to set its socket listeners again so they can start
-        // a new game
-        if (socket.readyState == WebSocket.OPEN) setSocketListeners(socket);
+        // if a socket is removed from the game but is still connected, set it up again so it can start a new game
+        if (socket.readyState == WebSocket.OPEN) {
+          socketsNotPlaying.push(socket);
+          setSocketListeners(socket);
+        }
       };
       desiredGame.waitingToPlay = [];
     }
+
+    announceNewCount(gameIndex, desiredGame.waitingToPlay.length);
   }
 }
 

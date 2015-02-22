@@ -84,9 +84,13 @@ function startGame() {
     if (parsed.hasOwnProperty("toDelete")) {
       var toDelete = parsed["toDelete"];
       for (var i = toDelete.length - 1; i >= 0; i--) {
-        if (toDelete[i] < myIndex) myIndex--;
         game.players.splice(toDelete[i], 1);
       }
+    }
+
+    if (parsed.hasOwnProperty("kill")) {
+      var toKill = parsed.kill;
+      game.getPlayer(toKill).kill();
     }
 
     if (parsed.hasOwnProperty("newPlayer")) {
@@ -95,7 +99,7 @@ function startGame() {
 
     if (parsed.hasOwnProperty("yourIndex")) {
       myIndex = parsed["yourIndex"];
-      newDir = game.players[myIndex].direction;
+      newDir = game.getPlayer(myIndex).direction;
       $(document).keydown(function(e) {
         var dir = keyCodes[e.which];
         if (dir) {
@@ -106,9 +110,11 @@ function startGame() {
     }
 
     if (parsed.hasOwnProperty("updates")) {
-      for (var i = parsed["updates"].length - 1; i >= 0; i--) {
-        if (myIndex != i) {
-          game.players[i].setDirection(parsed["updates"][i]);
+      for (var i = parsed.updates.length - 1; i >= 0; i--) {
+        var index = parsed.updates[i][0];
+        var direction = parsed.updates[i][1];
+        if (myIndex != index) {
+          game.getPlayer(index).setDirection(direction);
         }
       }
     }
@@ -116,10 +122,10 @@ function startGame() {
     if (parsed.hasOwnProperty("tick")) {
       if (parsed["tick"]) {
         game.tick(); 
-        if (!gameInProgress) return;  // game.tick could've ended the game due to collisions
+        //if (!gameInProgress) return;  // game.tick could've ended the game due to collisions
         draw(game.players, canvas);
-        game.players[myIndex].setDirection(newDir);
-        socket.send(game.players[myIndex].direction);
+        game.getPlayer(myIndex).setDirection(newDir);
+        socket.send(game.getPlayer(myIndex).direction);
       }
     }
   }
@@ -143,9 +149,8 @@ function startGame() {
   }
 
   game.onCollision = function(collisions) {
-    if (!game.players[myIndex].alive) {
+    if (!game.getPlayer(myIndex).alive) {
       gameInProgress = false;
-      socket.onmessage = function() {};
       console.log("You lose!");
     } else {
       if (game.countLiving() === 1) {
