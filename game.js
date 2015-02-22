@@ -65,7 +65,8 @@ function Game(blockWidth, canvasWidth, canvasHeight) {
 
     // check for collisions
     for (i = this.players.length - 1; i >= 0; i--) {
-      if (collided = this.hasCollision(this.players[i].pieces[0])) {
+      var headPiece = this.players[i].pieces[this.players[i].pieces.length - 1];
+      if (collided = this.hasCollision(headPiece)) {
         this.kill(this.players[i]);
         collisions.push({collider: this.players[i], collided: collided});
       }
@@ -141,46 +142,33 @@ function Game(blockWidth, canvasWidth, canvasHeight) {
     };
 
     this.advance = function() {
-      if (!this.alive) return;
+      
+      if (!this.alive) return;  // if we're dead, we shouldn't move
 
-      var newPiece;
-      var lastPiece;
-
-      // create a new "piece" to add to the snake if it's less than max size
-      if (this.pieces.length < this.maxLen || this.infiniteSnake) {
-        lastPiece = this.pieces[this.pieces.length - 1];
-        newPiece = {x: lastPiece.x, y: lastPiece.y};
-      }
-
-      // advance the snake's "tail" (everything but the head)
-      // can this be avoided?
-      for (var i = this.pieces.length - 1; i > 0; i--) {
-        this.pieces[i] = {x: this.pieces[i - 1].x, y: this.pieces[i - 1].y};
-      }
-     
-      // advance the head of the snake (the leading "piece")
+      var lastPiece = this.pieces[this.pieces.length - 1];
+      var newPiece = { x: lastPiece.x, y: lastPiece.y };
+      
       switch (this.direction) {
         case DIRECTIONS.UP:
-          this.pieces[0].y -= speed; 
+          newPiece.y -= speed; 
           break;
         case DIRECTIONS.DOWN:
-          this.pieces[0].y += speed;
+          newPiece.y += speed;
           break;
         case DIRECTIONS.LEFT:
-          this.pieces[0].x -= speed;
+          newPiece.x -= speed;
           break;
         case DIRECTIONS.RIGHT:
-          this.pieces[0].x += speed;
+          newPiece.x += speed;
           break;
       }
       
-      // if we're exceeding this height/width of the canvas, wrap around
-      this.pieces[0].x = wrap(this.pieces[0].x, 0, canvasWidth);
-      this.pieces[0].y = wrap(this.pieces[0].y, 0, canvasHeight);
+      // if we're exceeding height/width of the canvas, wrap around
+      newPiece.x = wrap(newPiece.x, 0, canvasWidth);
+      newPiece.y = wrap(newPiece.y, 0, canvasHeight);
 
-      if (newPiece) {
-        this.pieces.push(newPiece);
-      }
+      this.pieces.push(newPiece);
+      
     };
 
     this.kill = function() {
