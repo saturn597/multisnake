@@ -20,17 +20,17 @@ function Game(blockWidth, canvasWidth, canvasHeight) {
 
   this.onCollision = function(collisions) {};
 
-  this.addPlayer = function(pieces, initD, index) {
-    this.players[index] = new Player(pieces, initD, index); 
-    return this.players[index];
+  this.addPlayer = function(pieces, initD, id) {
+    this.players[id] = new Player(pieces, initD, id); 
+    return this.players[id];
   }
 
   this.removePlayer = function(player) {
     this.players.splice(this.players.indexOf(player), 1);
   } 
 
-  this.getPlayer = function(index) {
-    return this.players.find(function (player) { return player.index == index });
+  this.getPlayer = function(id) {
+    return this.players.find(function (player) { return player.id == id });
   }
   
   this.countLiving = function() {
@@ -90,13 +90,13 @@ function Game(blockWidth, canvasWidth, canvasHeight) {
     return newValue;
   }
 
-  function Player(pieces, initD, index) {
+  function Player(pieces, initD, id) {
 
     var speed = blockWidth;
 
     this.alive = true;
 
-    this.index = index;
+    this.id = id;
 
     this.pieces = pieces;
     

@@ -11,7 +11,7 @@ function Connection(sock, player) {
   this.player = player;
 
   // for convenience
-  this.index = player.index;
+  this.id = player.id;
   this.send = function(msg, callback) {
     this.sock.send(msg, callback);
   }
@@ -21,6 +21,10 @@ function Connection(sock, player) {
 
   // whether we're waiting on this connection to give us information
   this.waiting = false;  
+
+  this.getPlayerData = function() {
+    return { pieces: this.player.pieces, id: this.player.id, direction: this.player.direction };
+  }
 
 }
 
@@ -43,13 +47,7 @@ function GameOverseer(sockets) {
 
 
   function handleCollision(collisions) {
-    console.log("handle collisions");
-
-    for (var i = collisions.length - 1; i >= 0; i--) {
-      //removeFromGame(connections[game.players.indexOf(collisions[i].collider)]);
-    }
     if (game.countLiving() <= 1) endGame();
-
   }
 
   
@@ -57,9 +55,6 @@ function GameOverseer(sockets) {
     gameInProgress = false;
     clearTimeout(timer);
     time = false;
-    console.log("in end game");
-    for (var i = connections.length - 1; i >= 0; i--)
-      removeFromGame(connections[i]);
     game.initialize();
   }
 
@@ -97,7 +92,7 @@ function GameOverseer(sockets) {
 
   function updateClients() {
     var direction;
-    var updates = connections.map(function(connection) { return [ connection.index, connection.player.direction ] } );
+    var updates = connections.map(function(connection) { return [ connection.id, connection.player.direction ] } );
     for (var i = connections.length - 1; i >= 0; i--) {
       connections[i].send(JSON.stringify( {updates: updates, tick: true} ), function(e) {});
       connections[i].waiting = true;
@@ -119,14 +114,7 @@ function GameOverseer(sockets) {
         newState = initStates[newIndex % initStates.length];
 
     return game.addPlayer([{ x: newState.x, y: newState.y }], newState.d, newIndex);
-  }
-
-
-  function getPlayerData(index) {
-    var player = connections[index].player;
-    return { pieces: player.pieces, index: index, direction: player.direction };
-  }
-  
+  }  
 
   function setConnectionListeners(connection) {
     // sets the right listeners on the socket
@@ -144,34 +132,23 @@ function GameOverseer(sockets) {
     };
 
     connection.sock.onclose = function() {
-      removeFromGame(connection);
+      connections.splice(connections.indexOf(connection), 1);
+      kill(connection);
+      // We might be ready to advance a frame, if we were waiting only on the client that just disconnected
+      tickIfReady();
     };
   } 
 
-  var _this = this;  // do something better about this
-  function removeFromGame(connection) {
-    var index = connections.indexOf(connection);  
-    console.log(index);
-    if (index > -1) {  // do I need this check?
+  function kill(connection) {
 
-      connections.splice(connections.indexOf(connection), 1);
-      game.getPlayer(connection.index).kill();
+    connection.player.kill();
 
-      if (connections.length === 0) {
-        clearTimeout(timer);
-        gameInProgress = false;
-      }
+    if (game.countLiving() <= 1 && gameInProgress) endGame();
 
-      // If we lose the connection to someone, we need to tell everyone they are no longer in the game -
-      // but don't bother if the game is over anyway
-      if (gameInProgress) tellAllClients(JSON.stringify({ "kill": [index] }));
+    // If someone died, tell everyone -
+    // but don't bother if the game is over anyway
+    if (gameInProgress) tellAllClients(JSON.stringify({ "kill": [connection.id] }));
 
-
-      _this.onRemoveFromGame(connection.sock);
-
-      // We might be ready to advance a frame, if we were waiting only on the client that just disconnected
-      tickIfReady();
-    }  
   }
 
   this.onRemoveFromGame = function(socket) {
@@ -187,14 +164,14 @@ function GameOverseer(sockets) {
 
   // tell clients about each other
   for (var i = connections.length - 1; i >= 0; i--) {
-    var playerData = getPlayerData(i);
+    var playerData = connections[i].getPlayerData();
     tellAllClients(JSON.stringify({ "newPlayer": playerData }));
   }
 
   // tell clients their own identity - clients must get this after they know their own initial state
   // TODO: remove that requirement
   for (var i = connections.length - 1; i >= 0; i--) {
-    connections[i].send(JSON.stringify({ "yourIndex": connections[i].index }));
+    connections[i].send(JSON.stringify({ "yourIndex": connections[i].id }));
   }
 
   gameInProgress = true;

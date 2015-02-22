@@ -94,7 +94,7 @@ function startGame() {
     }
 
     if (parsed.hasOwnProperty("newPlayer")) {
-      game.addPlayer(parsed["newPlayer"].pieces, parsed["newPlayer"].direction, parsed["newPlayer"].index);
+      game.addPlayer(parsed["newPlayer"].pieces, parsed["newPlayer"].direction, parsed["newPlayer"].id);
     }
 
     if (parsed.hasOwnProperty("yourIndex")) {
@@ -111,10 +111,10 @@ function startGame() {
 
     if (parsed.hasOwnProperty("updates")) {
       for (var i = parsed.updates.length - 1; i >= 0; i--) {
-        var index = parsed.updates[i][0];
+        var id = parsed.updates[i][0];
         var direction = parsed.updates[i][1];
-        if (myIndex != index) {
-          game.getPlayer(index).setDirection(direction);
+        if (myIndex != id) {
+          game.getPlayer(id).setDirection(direction);
         }
       }
     }
