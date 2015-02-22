@@ -50,12 +50,10 @@ function GameOverseer(sockets) {
     if (game.countLiving() <= 1) endGame();
   }
 
-  
   function endGame() {
     gameInProgress = false;
     clearTimeout(timer);
     time = false;
-    game.initialize();
   }
 
   function timesUp() {
@@ -141,13 +139,13 @@ function GameOverseer(sockets) {
 
   function kill(connection) {
 
-    connection.player.kill();
-
-    if (game.countLiving() <= 1 && gameInProgress) endGame();
+    game.kill(connection.player);
 
     // If someone died, tell everyone -
     // but don't bother if the game is over anyway
     if (gameInProgress) tellAllClients(JSON.stringify({ "kill": [connection.id] }));
+
+    if (game.countLiving() <= 1 && gameInProgress) endGame();
 
   }
 

@@ -90,7 +90,7 @@ function startGame() {
 
     if (parsed.hasOwnProperty("kill")) {
       var toKill = parsed.kill;
-      game.getPlayer(toKill).kill();
+      game.kill(game.getPlayerById(toKill));
     }
 
     if (parsed.hasOwnProperty("newPlayer")) {
@@ -99,7 +99,7 @@ function startGame() {
 
     if (parsed.hasOwnProperty("yourIndex")) {
       myIndex = parsed["yourIndex"];
-      newDir = game.getPlayer(myIndex).direction;
+      newDir = game.getPlayerById(myIndex).direction;
       $(document).keydown(function(e) {
         var dir = keyCodes[e.which];
         if (dir) {
@@ -114,7 +114,7 @@ function startGame() {
         var id = parsed.updates[i][0];
         var direction = parsed.updates[i][1];
         if (myIndex != id) {
-          game.getPlayer(id).setDirection(direction);
+          game.getPlayerById(id).setDirection(direction);
         }
       }
     }
@@ -122,10 +122,9 @@ function startGame() {
     if (parsed.hasOwnProperty("tick")) {
       if (parsed["tick"]) {
         game.tick(); 
-        //if (!gameInProgress) return;  // game.tick could've ended the game due to collisions
         draw(game.players, canvas);
-        game.getPlayer(myIndex).setDirection(newDir);
-        socket.send(game.getPlayer(myIndex).direction);
+        game.getPlayerById(myIndex).setDirection(newDir);
+        socket.send(game.getPlayerById(myIndex).direction);
       }
     }
   }
@@ -148,15 +147,14 @@ function startGame() {
     context.stroke();
   }
 
-  game.onCollision = function(collisions) {
-    if (!game.getPlayer(myIndex).alive) {
+  game.onKill = function(player) {
+    // when someone is killed in game, check if that causes us to win or lose
+    if (player.id === myIndex) {
       gameInProgress = false;
       console.log("You lose!");
-    } else {
-      if (game.countLiving() === 1) {
+    } else if (game.countLiving() === 1) {
         console.log("You win!"); 
         gameInProgress = false;
-      }
     }
   }
 };

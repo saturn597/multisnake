@@ -25,14 +25,23 @@ function Game(blockWidth, canvasWidth, canvasHeight) {
     return this.players[id];
   }
 
+  this.getPlayerById = function(id) {
+    return this.players.find(function (player) { return player.id == id });
+  }
+
   this.removePlayer = function(player) {
     this.players.splice(this.players.indexOf(player), 1);
   } 
 
-  this.getPlayer = function(id) {
-    return this.players.find(function (player) { return player.id == id });
+  this.kill = function(player) {
+    player.kill();
+    this.onKill(player);
   }
-  
+
+  this.onKill = function(player) {
+     
+  }
+
   this.countLiving = function() {
     var count = 0;
     for (var i = this.players.length - 1; i >= 0; i--) {
@@ -57,7 +66,7 @@ function Game(blockWidth, canvasWidth, canvasHeight) {
     // check for collisions
     for (i = this.players.length - 1; i >= 0; i--) {
       if (collided = this.hasCollision(this.players[i].pieces[0])) {
-        this.players[i].kill();
+        this.kill(this.players[i]);
         collisions.push({collider: this.players[i], collided: collided});
       }
     }
