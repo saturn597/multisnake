@@ -169,8 +169,8 @@ function GameOverseer(sockets) {
 
   // tell clients about each other
   for (var i = connections.length - 1; i >= 0; i--) {
-    var playerData = connections[i].getPlayerData();
-    tellAllClients(JSON.stringify({ "newPlayer": playerData }));
+    var data = connections.map(function(connection) { return connection.getPlayerData(); });
+    tellAllClients(JSON.stringify({ "newPlayers": data }));
   }
 
   // tell clients their own identity - clients must get this after they know their own initial state

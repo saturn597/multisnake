@@ -112,6 +112,7 @@ function Game(blockWidth, canvasWidth, canvasHeight) {
 
     this.id = id;
 
+    this.lastAdded = pieces;
     this.pieces = pieces;
     
     this.direction = initD;
@@ -170,7 +171,7 @@ function Game(blockWidth, canvasWidth, canvasHeight) {
       // if we're exceeding height/width of the canvas, wrap around
       newPiece.x = wrap(newPiece.x, 0, canvasWidth);
       newPiece.y = wrap(newPiece.y, 0, canvasHeight);
-
+      this.lastAdded = [newPiece];
       this.pieces.push(newPiece);
       
     };

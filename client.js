@@ -108,9 +108,18 @@ function startGame() {
       game.addPlayer(parsed["newPlayer"].pieces, parsed["newPlayer"].direction, parsed["newPlayer"].id);
     }
 
+    if (parsed.hasOwnProperty("newPlayers")) {
+      parsed.newPlayers.forEach(function(playerData) { game.addPlayer(playerData.pieces, playerData.direction, playerData.id); });
+    }
+
     if (parsed.hasOwnProperty("yourIndex")) {
       myIndex = parsed["yourIndex"];
       newDir = game.getPlayerById(myIndex).direction;
+      
+      // at this point, we have the info we need to draw the initial pieces of each player
+      // (before, we didn't know which belonged to the client, so we didn't know what color to use)
+      draw(game.players, canvas);
+
       $(document).keydown(function(e) {
         var dir = keyCodes[e.which];
         if (dir) {
@@ -141,10 +150,8 @@ function startGame() {
   }
 
   function draw(players, canvas) {
-    // change this up to only draw the changed pieces?
     var context = canvas.getContext('2d')
     context.beginPath();
-    context.clearRect(0, 0, canvas.width, canvas.height);
 
     for (var i = players.length - 1; i >= 0; i--) {
       if (i == myIndex) {
@@ -152,9 +159,8 @@ function startGame() {
       } else {
         context.fillStyle = "DarkBlue";
       }
-      if (!players[i].alive) context.fillStyle = "LightGray";
-      for (var j = players[i].pieces.length - 1; j >= 0; j--)  {
-        context.fillRect(players[i].pieces[j].x, players[i].pieces[j].y, blockWidth, blockWidth);
+      for (var j = players[i].lastAdded.length - 1; j >= 0; j--)  {
+        context.fillRect(players[i].lastAdded[j].x, players[i].lastAdded[j].y, blockWidth, blockWidth);
       } 
     }
     context.stroke();
