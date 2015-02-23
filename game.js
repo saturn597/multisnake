@@ -69,6 +69,7 @@ function Game(blockWidth, canvasWidth, canvasHeight) {
 
     // check for collisions
     for (i = this.players.length - 1; i >= 0; i--) {
+      if (!this.players[i].alive) continue;
       var headPiece = this.players[i].pieces[this.players[i].pieces.length - 1];
       if (collided = this.hasCollision(headPiece)) {
         this.kill(this.players[i]);

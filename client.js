@@ -72,11 +72,17 @@ function joinGame(gameNum) {
 }
 
 function endGame() {
+  var canvas = $('#canvas')[0];
+  var context = canvas.getContext('2d');
+  context.fillStyle = "white";
+  context.fillRect(0, 0, canvas.width, canvas.height);
   socket.onmessage = waitingOnmessage;
   socket.send("leave");
 }
 
 function startGame() {
+
+  var globalMessage = {};
 
   var gameInProgress = true;
 
@@ -150,12 +156,11 @@ function startGame() {
   }
 
   function draw(players, canvas) {
-    var context = canvas.getContext('2d')
-    context.beginPath();
+    var context = canvas.getContext('2d') 
 
     for (var i = players.length - 1; i >= 0; i--) {
       if (i == myIndex) {
-        context.fillStyle = "LightCoral";
+        context.fillStyle = "Salmon";
       } else {
         context.fillStyle = "DarkBlue";
       }
@@ -163,17 +168,42 @@ function startGame() {
         context.fillRect(players[i].lastAdded[j].x, players[i].lastAdded[j].y, blockWidth, blockWidth);
       } 
     }
-    context.stroke();
+
+    if (globalMessage.text) {
+      context.font = globalMessage.font;
+      context.fillStyle = globalMessage.color;
+      context.fillText(globalMessage.text, globalMessage.x, globalMessage.y);
+    }
+  }
+
+  function createMessage(text, color, canvas) {
+    var context = canvas.getContext('2d');
+
+    var oldFont = context.font;
+    var messageFont = "96px sans-serif";
+    context.font = messageFont;  // need the right font so the measurement is right
+    var dimensions = context.measureText(text);
+    context.font = oldFont;  // I don't think I'll need this but set back to the original font just in case
+    // maybe that's overkill - maybe just set the font globally, since I'm not using any other fonts
+
+    return {
+      text: text,
+      color: color,
+      font: messageFont,
+      x: canvas.width / 2 - dimensions.width / 2, 
+      y: canvas.height / 2 + 24
+    };
   }
 
   game.onKill = function(player) {
     // when someone is killed in game, check if that causes us to win or lose
     if (player.id === myIndex) {
+      globalMessage = createMessage("You lose!", "Crimson", canvas);
+      console.log("lost!");
       gameInProgress = false;
-      console.log("You lose!");
     } else if (game.countLiving() === 1 && game.getPlayerById(myIndex).alive) {
-        console.log("You win!"); 
-        gameInProgress = false;
+      globalMessage = createMessage("You win!", "DodgerBlue", canvas);
+      gameInProgress = false;
     }
   }
 };
