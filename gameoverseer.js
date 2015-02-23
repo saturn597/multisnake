@@ -30,10 +30,18 @@ function Connection(sock, player) {
 
 
 function GameOverseer(sockets) {
-  
+  var theOverseer = this;  // us
+    
   // set up our game
   var game = new gameModule.Game(5, 800, 600);
-  game.onCollision = handleCollision;
+
+  game.onKill = function() {
+    if (game.countLiving() <= 1) {
+      clearTimeout(timer);
+      time = false;
+      gameInProgress = false;
+    }
+  }
 
   // some useful constants
   var initStates = [{x: 0, y: 0, d: game.DIRECTIONS.RIGHT}, {x: 400, y: 295, d: game.DIRECTIONS.LEFT},
@@ -45,15 +53,7 @@ function GameOverseer(sockets) {
   var gameInProgress = true,
       time = false;  // whether enough time has passed since the last frame to go to the next one
 
-
-  function handleCollision(collisions) {
-    if (game.countLiving() <= 1) endGame();
-  }
-
   function endGame() {
-    gameInProgress = false;
-    clearTimeout(timer);
-    time = false;
   }
 
   function timesUp() {
@@ -122,6 +122,15 @@ function GameOverseer(sockets) {
     
     connection.sock.onmessage = function(message) {
       // Messages we get from clients will tell us the direction they've most recently set their snake to move in
+      
+      if (message.data === "leave") {
+        connections.splice(connections.indexOf(connection), 1);
+        kill(connection); 
+        theOverseer.onLeftGame(connection.sock);
+        tickIfReady();
+        return;
+      }
+
       connection.player.setDirection(parseInt(message.data, 10));
       connection.waiting = false;
 
@@ -141,15 +150,13 @@ function GameOverseer(sockets) {
 
     game.kill(connection.player);
 
-    // If someone died, tell everyone -
-    // but don't bother if the game is over anyway
-    if (gameInProgress) tellAllClients(JSON.stringify({ "kill": [connection.id] }));
+    tellAllClients(JSON.stringify({ "kill": [connection.id] }));
 
     if (game.countLiving() <= 1 && gameInProgress) endGame();
 
   }
 
-  this.onRemoveFromGame = function(socket) {
+  this.onLeftGame = function(socket) {
      
   }
 

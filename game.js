@@ -51,6 +51,10 @@ function Game(blockWidth, canvasWidth, canvasHeight) {
     }
     return count;
   }
+
+  this.getLiving = function() {
+    return this.players.filter(function(player) { return player.living });
+  }
    
   this.tick = function() {
     /* Advance the game by one frame*/

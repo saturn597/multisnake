@@ -77,12 +77,14 @@ function respondToMsg(msg) {
       
       console.log("beginning game");
       tellSockets("startGame", desiredGame.waitingToPlay);
-
       desiredGame.waitingToPlay.forEach(function(socket) { socketsNotPlaying.splice(socketsNotPlaying.indexOf(socket), 1) });
       var gameOverseer = new GameOverseer.GameOverseer(desiredGame.waitingToPlay);
-      gameOverseer.onRemoveFromGame = function (socket) {
+      gameOverseer.onLeftGame = function (socket) {
         // if a socket is removed from the game but is still connected, set it up again so it can start a new game
+
         if (socket.readyState == WebSocket.OPEN) {
+          console.log("sending game info");
+          sendGameInfo(socket);
           socketsNotPlaying.push(socket);
           setSocketListeners(socket);
         }

@@ -8,31 +8,37 @@ var keyCodes = {
 }
 
 var socket;
+
+var waitingOnmessage = function(msg) {
+  if (msg.data == "startGame") {
+    $("#gameList").css("visibility", "hidden"); 
+    startGame();
+    return;
+  }
+  console.log(msg.data);
+  var parsed = JSON.parse(msg.data);
+  if (parsed.hasOwnProperty("games")) {
+    // receiving a summary of games that are currently available
+    console.log("Receiving game info");
+    var games = parsed.games;
+    $("#gameList").html("");
+    for (var i = games.length - 1; i >= 0; i--) {
+      $("#gameList").append(createGameLink(i, games[i].name, games[i].waitingCount));
+      $("#gameList").append($("<br> /"));
+    }
+  }
+  if (parsed.hasOwnProperty("newCount")) {
+    console.log("received new count");
+    // a newCount message contains the game we're updating at [0] and the new count at [1]
+    var info = parsed.newCount;
+    setGameCount(info[0], info[1]);
+  }
+};
+
+
 $('document').ready(function() {
   socket = new WebSocket("ws://localhost:8080/");
-  socket.onmessage = function(msg) {
-    if (msg.data == "startGame") {
-      $("#gameList").css("visibility", "hidden"); 
-      startGame();
-      return;
-    }
-    console.log(msg.data);
-    var parsed = JSON.parse(msg.data);
-    if (parsed.hasOwnProperty("games")) {
-      // receiving a summary of games that are currently available
-      var games = parsed.games;
-      for (var i = games.length - 1; i >= 0; i--) {
-        $("#gameList").append(createGameLink(i, games[i].name, games[i].waitingCount));
-        $("#gameList").append($("<br> /"));
-      }
-    }
-    if (parsed.hasOwnProperty("newCount")) {
-      console.log("received new count");
-      // a newCount message contains the game we're updating at [0] and the new count at [1]
-      var info = parsed.newCount;
-      setGameCount(info[0], info[1]);
-    }
-  };
+  socket.onmessage = waitingOnmessage;
 });
 
 function createGameLink(num, name, count) {
@@ -63,6 +69,12 @@ function setGameCount(num, count) {
 function joinGame(gameNum) {
   console.log("sending join");
   socket.send(JSON.stringify({"join": gameNum}));
+}
+
+function endGame() {
+  socket.onmessage = waitingOnmessage;
+  socket.send("leave");
+  $("#gameList").css("visibility", "visible"); 
 }
 
 function startGame() {
@@ -130,6 +142,7 @@ function startGame() {
   }
 
   function draw(players, canvas) {
+    // change this up to only draw the changed pieces?
     var context = canvas.getContext('2d')
     context.beginPath();
     context.clearRect(0, 0, canvas.width, canvas.height);
@@ -152,7 +165,7 @@ function startGame() {
     if (player.id === myIndex) {
       gameInProgress = false;
       console.log("You lose!");
-    } else if (game.countLiving() === 1) {
+    } else if (game.countLiving() === 1 && game.getPlayerById(myIndex).alive) {
         console.log("You win!"); 
         gameInProgress = false;
     }
