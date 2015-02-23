@@ -11,7 +11,7 @@ var socket;
 
 var waitingOnmessage = function(msg) {
   if (msg.data == "startGame") {
-    $("#gameList").css("visibility", "hidden"); 
+    $("#gameList").html("<h1><a href = 'javascript:endGame()'>Exit game</a></h1>"); 
     startGame();
     return;
   }
@@ -74,7 +74,6 @@ function joinGame(gameNum) {
 function endGame() {
   socket.onmessage = waitingOnmessage;
   socket.send("leave");
-  $("#gameList").css("visibility", "visible"); 
 }
 
 function startGame() {
@@ -149,10 +148,11 @@ function startGame() {
 
     for (var i = players.length - 1; i >= 0; i--) {
       if (i == myIndex) {
-        context.fillStyle = "#FF0000";
+        context.fillStyle = "LightCoral";
       } else {
-        context.fillStyle = "#000000";
+        context.fillStyle = "DarkBlue";
       }
+      if (!players[i].alive) context.fillStyle = "LightGray";
       for (var j = players[i].pieces.length - 1; j >= 0; j--)  {
         context.fillRect(players[i].pieces[j].x, players[i].pieces[j].y, blockWidth, blockWidth);
       } 
