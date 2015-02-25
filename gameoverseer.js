@@ -12,9 +12,16 @@ function Connection(sock, player) {
 
   // for convenience
   this.id = player.id;
-  this.send = function(msg, callback) {
-    this.sock.send(msg, callback);
+
+  this.send = function(msg) {
+    this.sock.send(msg, function(e) { 
+      if (e) { 
+        console.log("ERROR: ran into problem sending message");
+        console.log("The error was this: " + e); 
+      }
+    });
   }
+
   this.close = function() {
     this.sock.close();
   }
@@ -92,7 +99,7 @@ function GameOverseer(sockets) {
     var direction;
     var updates = connections.map(function(connection) { return [ connection.id, connection.player.direction ] } );
     for (var i = connections.length - 1; i >= 0; i--) {
-      connections[i].send(JSON.stringify( {updates: updates, tick: true} ), function(e) {});
+      connections[i].send(JSON.stringify( {updates: updates, tick: true} ));
       connections[i].waiting = true;
     }
   }
@@ -100,7 +107,7 @@ function GameOverseer(sockets) {
 
   function tellAllClients(msg) {
     for (var i = connections.length - 1; i >= 0; i--) {
-      connections[i].send(msg, function(e) {});
+      connections[i].send(msg);
     }
   }
 
