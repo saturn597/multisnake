@@ -1,0 +1,47 @@
+body {
+  width: 100%;
+  text-align: center;
+  display: table;
+  font-family: sans-serif;
+}
+
+#gameListContainer {
+  display: table-cell;
+  width: 10%;
+  vertical-align: middle;
+}
+
+ul#gameList {
+  list-style-type: none;
+}
+
+#canvasContainer {
+  display: table-cell;
+  text-align: left;
+  position: relative;
+  width: 1200px;
+  height: 626px;
+}
+
+#canvas {
+  border: solid DarkCyan 2px;
+  margin: 0 0 0 5px;
+}
+
+#gameMessagesContainer {
+  display: table;
+  position: absolute;
+  top: 2px;
+  left: 7px;
+  width: 800px;
+  height: 600px;
+}
+
+#gameMessages {
+  width: 800px;
+  height: 600px;
+  display: table-cell;
+  vertical-align: middle;
+  text-align: center;
+  font-size: 96px;
+}

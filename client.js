@@ -42,6 +42,8 @@ $('document').ready(function() {
 });
 
 function createGameLink(num, name, count) {
+  var li = $("<li />");
+  
   var a = $("<a />", {
     id: "gameLink" + num,
     href: "javascript:joinGame(" + num + ")"
@@ -58,8 +60,9 @@ function createGameLink(num, name, count) {
   });
 
   a.append(nameSpan).append(countSpan);
+  li.append(a);
 
-  return a;
+  return li;
 }
 
 function setGameCount(num, count) {
@@ -177,6 +180,7 @@ function startGame() {
     }
 
     if (globalMessage.text) {
+      // not currently using this - maybe delete
       context.font = globalMessage.font;
       context.fillStyle = globalMessage.color;
       context.fillText(globalMessage.text, globalMessage.x, globalMessage.y);
@@ -184,6 +188,7 @@ function startGame() {
   }
 
   function createMessage(text, color, canvas) {
+    // not currently using this function - maybe delete
     var context = canvas.getContext('2d');
 
     var oldFont = context.font;
