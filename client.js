@@ -72,8 +72,15 @@ function joinGame(gameNum) {
 }
 
 function endGame() {
+
   var canvas = $('#canvas')[0];
   var context = canvas.getContext('2d');
+
+  // reset the gameMessages div and the canvas opacity in case we were showing a message 
+  $("#gameMessages").text("");
+  $('#canvas').css("opacity", "1");
+
+  // fill in the canvas with white
   context.fillStyle = "white";
   context.fillRect(0, 0, canvas.width, canvas.height);
   socket.onmessage = waitingOnmessage;
@@ -95,7 +102,7 @@ function startGame() {
 
   var myIndex;
   var newDir;
- 
+
   socket.onmessage = function(msg) {
     var parsed = JSON.parse(msg.data); 
     if (parsed.hasOwnProperty("toDelete")) {
@@ -195,14 +202,22 @@ function startGame() {
     };
   }
 
+  function showMessage(text, color) {
+    $("#canvas").css("opacity", "0.2");
+    $("#gameMessages").text(text);
+    $("#gameMessages").css("color", color);
+  }
+
   game.onKill = function(player) {
     // when someone is killed in game, check if that causes us to win or lose
     if (player.id === myIndex) {
-      globalMessage = createMessage("You lose!", "Crimson", canvas);
+      //globalMessage = createMessage("You lose!", "Crimson", canvas);
+      showMessage("You lose!", "Crimson");
       console.log("lost!");
       gameInProgress = false;
     } else if (game.countLiving() === 1 && game.getPlayerById(myIndex).alive) {
-      globalMessage = createMessage("You win!", "DodgerBlue", canvas);
+      //globalMessage = createMessage("You win!", "DodgerBlue", canvas);
+      showMessage("You win!", "DodgerBlue");
       gameInProgress = false;
     }
   }
