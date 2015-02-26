@@ -62,6 +62,12 @@ function tellSockets(msg, sockets) {  // use this instead of tellAllClients in g
 
 function respondToMsg(msg) {
 
+  if (msg.data === "cancel") {
+    // client was waiting to join a game but changed their mind
+    removeSocketFromPotentialGames(this);
+    return;
+  }
+
   try {
     var parsed = JSON.parse(msg.data);
   } catch (e) {

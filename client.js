@@ -85,9 +85,18 @@ function setGameCount(num, count) {
   $("#gameCount" + num).text(count);  // maybe use an array of these instead of identifying them by id
 }
 
+var currentGame = null;
 function joinGame(gameNum) {
-  console.log("sending join");
-  socket.send(JSON.stringify({"join": gameNum}));
+  if (gameNum === currentGame) {
+    // if user clicks on the join link for a game we're already waiting for cancel waiting
+    socket.send("cancel");
+    currentGame = null;
+  } else {
+    // otherwise, add us to the wait list for that game
+    console.log("sending join");
+    socket.send(JSON.stringify({"join": gameNum}));
+    currentGame = gameNum;
+  }
 }
 
 function endGame() {
