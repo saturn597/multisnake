@@ -92,7 +92,6 @@ function endGame() {
 }
 
 function startGame() {
-
   var globalMessage = {};
 
   var gameInProgress = true;
@@ -156,7 +155,7 @@ function startGame() {
       }
     }
 
-    if (parsed.hasOwnProperty("tick")) {
+    if (parsed.hasOwnProperty("tick")) { 
       if (parsed["tick"]) {
         game.tick(); 
         draw(game.players, canvas);

@@ -128,7 +128,8 @@ function GameOverseer(sockets) {
     // I don't think I'll need to listen to other events while a game is going on
     
     connection.sock.onmessage = function(message) {
-      // Messages we get from clients will tell us the direction they've most recently set their snake to move in
+      // we expect either an integer representing the player's direction for the next frame, or a 
+      // request to leave the game
       
       if (message.data === "leave") {
         connections.splice(connections.indexOf(connection), 1);
@@ -137,7 +138,18 @@ function GameOverseer(sockets) {
         tickIfReady();
         return;
       }
+     
+      // make sure the string we represents an integer in the format we expect
+      // if not, kill this connection
+      if (!/^\d+$/.test(message.data)) {
+        console.log("ERROR: Received a message we didn't understand during a game");
+        console.log("This was the message: " + message.data);
+        this.onmessage = function() {}; 
+        kill(connection);
+        connection.close();
+      }
 
+      // now get that integer and set the player's direction accordingly
       connection.player.setDirection(parseInt(message.data, 10));
       connection.waiting = false;
 
