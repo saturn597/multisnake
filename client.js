@@ -9,14 +9,18 @@ var keyCodes = {
 
 var socket;
 
+var currentGame = null;
+
 var waitingOnmessage = function(msg) {
+
   if (msg.data == "startGame") {
-    $("#gameList").html("<h1><a href = 'javascript:endGame()'>Exit game</a></h1>"); 
+    $("#gameList").html("<h1><a href = 'javascript:exitGame()'>Exit game</a></h1>"); 
     startGame();
     return;
   }
-  console.log(msg.data);
+
   var parsed = JSON.parse(msg.data);
+
   if (parsed.hasOwnProperty("games")) {
     // receiving a summary of games that are currently available
     console.log("Receiving game info");
@@ -26,6 +30,7 @@ var waitingOnmessage = function(msg) {
       $("#gameList").append(createGameLink(i, games[i].name, games[i].waitingCount));
     }
   }
+
   if (parsed.hasOwnProperty("newCount")) {
     console.log("received new count");
     // a newCount message contains the game we're updating at [0] and the new count at [1]
@@ -37,6 +42,7 @@ var waitingOnmessage = function(msg) {
 function socketClosed() {
   $("#gameList").css("display", "none");
   $("#errorMessages").css("display", "table-cell");
+  currentGame = null;
 }
 
 function socketOpen() {
@@ -85,21 +91,30 @@ function setGameCount(num, count) {
   $("#gameCount" + num).text(count);  // maybe use an array of these instead of identifying them by id
 }
 
-var currentGame = null;
 function joinGame(gameNum) {
   if (gameNum === currentGame) {
-    // if user clicks on the join link for a game we're already waiting for cancel waiting
+
+    // if user clicks on the join link for a game we're already waiting for, cancel waiting for that game
     socket.send("cancel");
     currentGame = null;
+
   } else {
+    
     // otherwise, add us to the wait list for that game
     console.log("sending join");
     socket.send(JSON.stringify({"join": gameNum}));
     currentGame = gameNum;
+
   }
 }
 
-function endGame() {
+function exitGame() {
+  currentGame = null;
+  socket.onmessage = waitingOnmessage;
+  socket.send("leave");
+}
+
+function resetDisplay() {
 
   var canvas = $('#canvas')[0];
   var context = canvas.getContext('2d');
@@ -111,8 +126,7 @@ function endGame() {
   // fill in the canvas with white
   context.fillStyle = "white";
   context.fillRect(0, 0, canvas.width, canvas.height);
-  socket.onmessage = waitingOnmessage;
-  socket.send("leave");
+
 }
 
 function startGame() {
@@ -129,6 +143,8 @@ function startGame() {
 
   var myIndex;
   var newDir;
+
+  resetDisplay();
 
   socket.onmessage = function(msg) {
     var parsed = JSON.parse(msg.data); 
