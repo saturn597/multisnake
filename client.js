@@ -34,10 +34,25 @@ var waitingOnmessage = function(msg) {
   }
 };
 
+function socketClosed() {
+  $("#gameList").css("display", "none");
+  $("#errorMessages").css("display", "table-cell");
+}
+
+function socketOpen() {
+  $("#gameList").css("display", "table-cell");
+  $("#errorMessages").css("display", "none");
+}
+
+function connect() {
+  socket = new WebSocket("ws://localhost:8080/");
+  socket.onopen = socketOpen;
+  socket.onmessage = waitingOnmessage;
+  socket.onclose = socketClosed;
+}
 
 $('document').ready(function() {
-  socket = new WebSocket("ws://localhost:8080/");
-  socket.onmessage = waitingOnmessage;
+  connect();
 });
 
 function createGameLink(num, name, count) {

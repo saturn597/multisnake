@@ -11,8 +11,27 @@ body {
   vertical-align: middle;
 }
 
-ul#gameList {
+#gameList {
   list-style-type: none;
+}
+
+.gameListItem {
+  background-color: Cornsilk;
+  border: solid DarkBlue 1px;
+  padding-top: 10px;
+  padding-bottom: 10px;
+  padding-left: 5px;
+  padding-right: 5px;
+  margin-top: 10px;
+  margin-bottom: 10px;
+  border-radius: 5px;
+}
+
+#errorMessages {
+  display: none;
+  width: 10%;
+  vertical-align: middle;
+  color: red;
 }
 
 #canvasContainer {
@@ -44,16 +63,6 @@ ul#gameList {
   vertical-align: middle;
   text-align: center;
   font-size: 96px;
-}
-
-.gameListItem {
-  background-color: Cornsilk;
-  border: solid DarkBlue 1px;
-  padding-top: 10px;
-  padding-bottom: 10px;
-  margin-top: 10px;
-  margin-bottom: 10px;
-  border-radius: 5px;
 }
 
 a {
