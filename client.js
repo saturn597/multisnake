@@ -24,7 +24,6 @@ var waitingOnmessage = function(msg) {
     $("#gameList").html("");
     for (var i = games.length - 1; i >= 0; i--) {
       $("#gameList").append(createGameLink(i, games[i].name, games[i].waitingCount));
-      $("#gameList").append($("<br> /"));
     }
   }
   if (parsed.hasOwnProperty("newCount")) {
@@ -42,7 +41,9 @@ $('document').ready(function() {
 });
 
 function createGameLink(num, name, count) {
-  var li = $("<li />");
+  var li = $("<li />", {
+    "class": "gameListItem"  
+  });
   
   var a = $("<a />", {
     id: "gameLink" + num,
