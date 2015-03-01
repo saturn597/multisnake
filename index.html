@@ -9,19 +9,13 @@
     <script type="text/javascript" src="client.js"></script>
   </head>
   <body>
-    <div id = "game">
-      <div id = "gameListContainer">
-        <ul id = "gameList"></ul>
-        <div id = "errorMessages">
-          <p>Connection trouble - sorry!</p>
-          <p><a href = "javascript:connect()">Try again?</a></p>
-        </div>
-      </div>
-      <div id = "canvasContainer">
-        <canvas id = "canvas" height = "600" width = "800"></canvas>
-        <div id = "gameMessagesContainer"><div id = "gameMessages"></div></div>
-      </div>
+    <canvas id = "canvas" height = "600" width = "800"></canvas>
+    <ul id = "gameList"></ul>
+    <div id = "errorMessages">
+      <p>Connection trouble - sorry!</p>
+      <p><a href = "javascript:connect()">Try again?</a></p>
     </div>
+    <div id = "gameMessagesContainer"><div id = "gameMessages"></div></div>
     <div id = "description"><h2>Snake game</h2><p>To play, click the button indicating how many players you want to battle. Once enough others are waiting for a game with that many players, the game will start.</p><p>Your snake will appear <span class = "playerColor">red</span> and your opponents' snakes <span class = "opponentColor">dark blue</span>. Use the arrow keys to change direction. Try to force your opponents to collide while avoiding running into anything yourself.</p></div>
   </body>
 </html>

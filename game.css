@@ -1,61 +1,37 @@
 body {
   width: 100%;
-  text-align: center;
   font-family: sans-serif;
-}
-
-#game {
-  display: table;
-  width: 100%;
-}
-
-#gameListContainer {
-  display: table-cell;
-  width: 10%;
-  vertical-align: middle;
 }
 
 #gameList {
   list-style-type: none;
-  width: 100%;
   padding-left: 0;
+  width: 800px;
+  text-align: center;
 }
 
 .gameListItem {
+  display: inline-block;
   background-color: Cornsilk;
   border: solid DarkBlue 1px;
-  margin: 5px 0 0 0;
+  margin: 0 10px 0 0;
+  padding: 10px 15px;
   border-radius: 5px;
-  width: 100%;
 }
 
 #errorMessages {
   display: none;
-  vertical-align: middle;
   color: red;
-}
-
-#canvasContainer {
-  text-align: left;
-  display: table-cell;
-  position: relative;
-  margin: 0;
-  padding: 0;
-  height: 604px;
 }
 
 #canvas {
   border: solid DarkCyan 2px;
-  display: block;  /* http://stackoverflow.com/questions/16033982/space-below-a-canvas-in-a-table-cell ???? */
-  height: 600px;
-  margin: 0;
-  padding: 0;
 }
 
 #gameMessagesContainer {
-  display: table;
-  position: absolute;
-  top: 2px;
+  display: table;  /* This is to vertically center the messages */
+  position: absolute;  /* We want this positioned in the right over the game area */
+  top: 2px;  /* Adjust for the game's borders */
   left: 2px;
   padding: 0;
   margin: 0;
@@ -64,8 +40,6 @@ body {
 }
 
 #gameMessages {
-  width: 800px;
-  height: 600px;
   display: table-cell;
   vertical-align: middle;
   text-align: center;
@@ -79,9 +53,7 @@ a {
 }
 
 #description {
-  text-align: left;
   font-size: 24px;
-  width: 800px;
-  margin-left: 10%;
+  width: 800px;  /* Align as well as we can with the canvas */
 }
 
