@@ -8,6 +8,8 @@ var keyCodes = {
 }
 
 var socket;
+var playerColor = "Salmon";
+var opponentColor = "DarkBlue";
 
 var currentGame = null;
 
@@ -46,7 +48,7 @@ function socketClosed() {
 }
 
 function socketOpen() {
-  $("#gameList").css("display", "table-cell");
+  $("#gameList").css("display", "block");
   $("#errorMessages").css("display", "none");
 }
 
@@ -58,6 +60,9 @@ function connect() {
 }
 
 $('document').ready(function() {
+
+  $(".playerColor").css({"color": playerColor, "font-weight": "bold"});
+  $(".opponentColor").css({"color": opponentColor, "font-weight": "bold"});
   connect();
 });
 
@@ -77,11 +82,11 @@ function createGameLink(num, name, count) {
   });
 
   var countSpan = $("<span />", {
-    text: count,
+    text: count + " waiting",
     "id": "gameCount" + num
   });
 
-  a.append(nameSpan).append(countSpan);
+  a.append(nameSpan).append("<br>").append(countSpan);
   li.append(a);
 
   return li;
@@ -210,9 +215,9 @@ function startGame() {
 
     for (var i = players.length - 1; i >= 0; i--) {
       if (i == myIndex) {
-        context.fillStyle = "Salmon";
+        context.fillStyle = playerColor;
       } else {
-        context.fillStyle = "DarkBlue";
+        context.fillStyle = opponentColor;
       }
       for (var j = players[i].lastAdded.length - 1; j >= 0; j--)  {
         context.fillRect(players[i].lastAdded[j].x, players[i].lastAdded[j].y, blockWidth, blockWidth);

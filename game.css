@@ -1,8 +1,12 @@
 body {
   width: 100%;
   text-align: center;
-  display: table;
   font-family: sans-serif;
+}
+
+#game {
+  display: table;
+  width: 100%;
 }
 
 #gameListContainer {
@@ -13,42 +17,48 @@ body {
 
 #gameList {
   list-style-type: none;
+  width: 100%;
+  padding-left: 0;
 }
 
 .gameListItem {
   background-color: Cornsilk;
   border: solid DarkBlue 1px;
-  padding: 10px 5px 10px 5px;
-  margin-top: 10px;
-  margin-bottom: 10px;
+  margin: 5px 0 0 0;
   border-radius: 5px;
+  width: 100%;
 }
 
 #errorMessages {
   display: none;
-  width: 10%;
   vertical-align: middle;
   color: red;
 }
 
 #canvasContainer {
-  display: table-cell;
   text-align: left;
+  display: table-cell;
   position: relative;
-  width: 1200px;
-  height: 626px;
+  margin: 0;
+  padding: 0;
+  height: 604px;
 }
 
 #canvas {
   border: solid DarkCyan 2px;
-  margin: 0 0 0 5px;
+  display: block;  /* http://stackoverflow.com/questions/16033982/space-below-a-canvas-in-a-table-cell ???? */
+  height: 600px;
+  margin: 0;
+  padding: 0;
 }
 
 #gameMessagesContainer {
   display: table;
   position: absolute;
   top: 2px;
-  left: 7px;
+  left: 2px;
+  padding: 0;
+  margin: 0;
   width: 800px;
   height: 600px;
 }
@@ -60,8 +70,18 @@ body {
   vertical-align: middle;
   text-align: center;
   font-size: 96px;
+  padding: 0;
+  margin: 0;
 }
 
 a {
   color: DarkCyan;
 }
+
+#description {
+  text-align: left;
+  font-size: 24px;
+  width: 800px;
+  margin-left: 10%;
+}
+
