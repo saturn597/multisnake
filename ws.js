@@ -8,13 +8,13 @@ var WebSocketServer = require('ws').Server,
 var GameOverseer = require('./gameoverseer.js');
 
 var potentialGames = [
-  { name: "1 player!", targetPlayerCount: 1, waitingToPlay: [] },
-  { name: "2 players!", targetPlayerCount: 2, waitingToPlay: [] }, 
-  { name: "3 players!", targetPlayerCount: 3, waitingToPlay: [] }
+  { name: "1 player game", targetCount: 1, waitingToPlay: [] },
+  { name: "2 player game", targetCount: 2, waitingToPlay: [] }, 
+  { name: "3 player game", targetCount: 3, waitingToPlay: [] }
 ];
 
 var socketsNotPlaying = [];
-var targetPlayerCount = 3;
+var targetCount = 3;
 
 wss.on('connection', function(ws) {
 
@@ -36,7 +36,7 @@ function sendGameInfo(sock) {
 function gameInfoToSend(game) {
   return {
     name: game.name,
-    targetPlayerCount: game.targetPlayerCount,
+    targetCount: game.targetCount,
     waitingCount: game.waitingToPlay.length
   }
 }
@@ -52,7 +52,6 @@ function removeSocketFromPotentialGames(socket) {
 }
 
 function announceNewCount(gameNumber, count) {
-  console.log("socketsNotPlaying.length: " + socketsNotPlaying.length);
   tellSockets(JSON.stringify({ newCount: [ gameNumber, count ] }), socketsNotPlaying);
 }
 
@@ -90,7 +89,7 @@ function respondToMsg(msg) {
     removeSocketFromPotentialGames(this);  // only be in one game at a time
     desiredGame.waitingToPlay.push(this);
 
-    if (desiredGame.waitingToPlay.length == desiredGame.targetPlayerCount) {
+    if (desiredGame.waitingToPlay.length == desiredGame.targetCount) {
       // if we have enough players, actually start the game
       
       console.log("beginning game");

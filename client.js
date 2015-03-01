@@ -11,7 +11,7 @@ var socket;
 var playerColor = "Salmon";
 var opponentColor = "DarkBlue";
 
-var currentGame = null;
+var currentGame;  // the game we're currently waiting on
 
 var waitingOnmessage = function(msg) {
 
@@ -26,6 +26,10 @@ var waitingOnmessage = function(msg) {
   if (parsed.hasOwnProperty("games")) {
     // receiving a summary of games that are currently available
     console.log("Receiving game info");
+
+    // receiving this means that we ended a game, just connected, or had to reconnect, so we're no longer waiting for a game
+    currentGame = null;
+
     var games = parsed.games;
     $("#gameList").html("");
     for (var i = games.length - 1; i >= 0; i--) {
@@ -44,7 +48,6 @@ var waitingOnmessage = function(msg) {
 function socketClosed() {
   $("#gameList").css("display", "none");
   $("#errorMessages").css("display", "table-cell");
-  currentGame = null;
 }
 
 function socketOpen() {
@@ -76,24 +79,24 @@ function createGameLink(num, name, count) {
     href: "javascript:joinGame(" + num + ")"
   });
 
-  var nameSpan =$("<span />", {
-    text: name + ": ",
-    "id": "gameName" + num
+  var nameSpan = $("<span />", {
+    text: name,
+    id: "gameName" + num
   });
 
   var countSpan = $("<span />", {
     text: count + " waiting",
-    "id": "gameCount" + num
+    id: "gameCount" + num
   });
 
-  a.append(nameSpan).append("<br>").append(countSpan);
-  li.append(a);
+  li.append(nameSpan).append("<br>").append(countSpan);
+  a.append(li);
 
-  return li;
+  return a;
 }
 
 function setGameCount(num, count) {
-  $("#gameCount" + num).text(count);  // maybe use an array of these instead of identifying them by id
+  $("#gameCount" + num).text(count + " waiting");  // maybe use an array of these instead of identifying them by id
 }
 
 function joinGame(gameNum) {
@@ -114,7 +117,6 @@ function joinGame(gameNum) {
 }
 
 function exitGame() {
-  currentGame = null;
   socket.onmessage = waitingOnmessage;
   socket.send("leave");
 }
