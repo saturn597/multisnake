@@ -1,9 +1,7 @@
-// TODO: Make it so clients can start a new game after they finish one again
-
 // set up modules
 var WebSocket = require('ws');
 var WebSocketServer = require('ws').Server, 
-  wss = new WebSocketServer({port: 8080});
+  wss = new WebSocketServer({ port: 8080 });
 
 var GameOverseer = require('./gameoverseer.js');
 
@@ -13,16 +11,59 @@ var potentialGames = [
   { name: "3 player game", targetCount: 3, waitingToPlay: [] }
 ];
 
-var socketsNotPlaying = [];
-var targetCount = 3;
+function SocketData(socket) {
+  // could also add info on which game we're trying to join, if any
+  this.socket = socket;
+  this.name = "";
+}
 
-wss.on('connection', function(ws) {
+var socketData = [];  // data associated with each socket that's not yet playing a game
+var socketsNotPlaying = [];  // socketsNotPlaying and socketData can probably be merged
 
-  sendGameInfo(ws);
-  socketsNotPlaying.push(ws);
-  setSocketListeners(ws); 
+function addSocket(socket) {
+  // we just got a new socket that isn't yet playing a game
+  sendGameInfo(socket);
+  socketsNotPlaying.push(socket);
+  addSocketData(socket);
+  setSocketListeners(socket);
+}
 
-});
+wss.on('connection', addSocket);
+
+function removeSocket(socket) {
+  var snpindex = socketsNotPlaying.indexOf(socket);
+
+  if (snpindex === -1) {
+    console.log("ERROR: attempted to remove socket we didn't have?");
+    return;
+  }
+
+  removeSocketData(socket);
+  socketsNotPlaying.splice(socketsNotPlaying.indexOf(socket), 1);
+}
+
+function getSocketIndex(socket) {
+  // get the index of the socket in the socketData array
+  for (var i = socketData.length - 1; i >= 0; i--) {
+    if (socketData[i].socket == socket) return i;
+  }
+}
+
+function getSocketData(socket) {
+  return socketData[getSocketIndex(socket)]; 
+}
+
+function removeSocketData(socket) {
+  socketData.splice(getSocketIndex(socket), 1); 
+}
+
+function addSocketData(socket) {
+  socketData.push(new SocketData(socket));
+}
+
+function setSocketName(socket, name) {
+  socketData[getSocketIndex(socket)].name = name;
+}
 
 function sendGameInfo(sock) {
   // wrap up the information we want to send about the currently available games
@@ -78,11 +119,15 @@ function respondToMsg(msg) {
     bail(this);
     return;
   }
+ 
+  if (parsed.hasOwnProperty('name')) {
+    setSocketName(this, parsed.name);  
+  }
 
   if (parsed.hasOwnProperty('join')) {
     // client should tell us which of the potential games they want to join
-    console.log("join received");
-    
+    console.log("join received from " + getSocketData(this).name);
+ 
     var gameIndex = parsed.join;  // the index of the game the socket wants to join
     var desiredGame = potentialGames[gameIndex]; // the game at that index
 
@@ -94,16 +139,13 @@ function respondToMsg(msg) {
       
       console.log("beginning game");
       tellSockets("startGame", desiredGame.waitingToPlay);
-      desiredGame.waitingToPlay.forEach(function(socket) { socketsNotPlaying.splice(socketsNotPlaying.indexOf(socket), 1) });
+      desiredGame.waitingToPlay.forEach(function(socket) { removeSocket(socket); });
       var gameOverseer = new GameOverseer.GameOverseer(desiredGame.waitingToPlay);
       gameOverseer.onLeftGame = function (socket) {
         // if a socket is removed from the game but is still connected, set it up again so it can start a new game
 
         if (socket.readyState == WebSocket.OPEN) {
-          console.log("sending game info");
-          sendGameInfo(socket);
-          socketsNotPlaying.push(socket);
-          setSocketListeners(socket);
+          addSocket(socket);
         }
       };
       desiredGame.waitingToPlay = [];
@@ -120,7 +162,7 @@ function respondToMsg(msg) {
 }
 
 function respondToClose() {
-  socketsNotPlaying.splice(socketsNotPlaying.indexOf(this), 1);
+  removeSocket(this);
 
   // if client joined a potential game, we should remove them from that game
   removeSocketFromPotentialGames(this);
@@ -134,7 +176,7 @@ function respondToError(e) {
 }
 
 function bail(socket) {
-  // stop responding to this sockets messages and close
+  // stop responding to this socket's messages and close
   console("Bailing on socket due to an error");
   this.onmessage = function() {};
   this.close();

@@ -9,6 +9,7 @@ function Connection(sock, player) {
   // basic info
   this.sock = sock;
   this.player = player;
+  this.name = "";
 
   // for convenience
   this.id = player.id;
@@ -138,7 +139,7 @@ function GameOverseer(sockets) {
         tickIfReady();
         return;
       }
-     
+            
       // make sure the string we represents an integer in the format we expect
       // if not, kill this connection
       if (!/^\d+$/.test(message.data)) {

@@ -29,6 +29,8 @@ var waitingOnmessage = function(msg) {
 
     // receiving this means that we ended a game, just connected, or had to reconnect, so we're no longer waiting for a game
     currentGame = null;
+    // and we can let players change their names again
+    $("#playerName").attr("disabled", false);
 
     var games = parsed.games;
     $("#gameList").html("");
@@ -105,14 +107,16 @@ function joinGame(gameNum) {
     // if user clicks on the join link for a game we're already waiting for, cancel waiting for that game
     socket.send("cancel");
     currentGame = null;
+    $("#playerName").attr("disabled", false);
 
   } else {
     
     // otherwise, add us to the wait list for that game
     console.log("sending join");
-    socket.send(JSON.stringify({"join": gameNum}));
+    socket.send(JSON.stringify({ "join": gameNum, "name": $("#playerName").val() }));
     currentGame = gameNum;
 
+    $("#playerName").attr("disabled", true);
   }
 }
 
@@ -152,7 +156,7 @@ function startGame() {
   var newDir;
 
   resetDisplay();
-
+  
   socket.onmessage = function(msg) {
     var parsed = JSON.parse(msg.data); 
     if (parsed.hasOwnProperty("toDelete")) {
