@@ -17,7 +17,7 @@ function Connection(socket) {
   // could also add info on which game we're trying to join, if any
 
   this.socket = socket;
-  this.name = "";
+  this.name = "Anon";
 
   this.send = function(msg) { this.socket.send(msg); };
   this.close = function() { this.socket.close(); };
@@ -118,7 +118,19 @@ function getOnMessage(connection) {
     }
    
     if (parsed.hasOwnProperty('name')) {
+      // client wants to set their name
+      // require that name be a nonempty string
+      
+      if (typeof(parsed.name) != "string") {
+        console.log("ERROR: client sent a name that wasn't a string.");
+        connection.bail();
+        return;
+      }
+
       connection.name = parsed.name;  
+
+      // if the player left their name blank, set it to a default
+      if (parsed.name == "") connection.name = "Anon";
     }
 
     if (parsed.hasOwnProperty('join')) {
