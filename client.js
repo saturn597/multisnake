@@ -23,6 +23,10 @@ var waitingOnmessage = function(msg) {
 
   var parsed = JSON.parse(msg.data);
 
+  if (parsed.hasOwnProperty("recentWinners")) {
+    updateRecentWinners(parsed.recentWinners);
+  }
+
   if (parsed.hasOwnProperty("games")) {
     // receiving a summary of games that are currently available
     console.log("Receiving game info");
@@ -98,7 +102,23 @@ function createGameLink(num, name, count) {
 }
 
 function setGameCount(num, count) {
-  $("#gameCount" + num).text(count + " waiting");  // maybe use an array of these instead of identifying them by id
+  // show the user that game number num has count other users waiting to play
+  $("#gameCount" + num).text(count + " waiting");  // could use an array of these instead of identifying them by id
+}
+
+function updateRecentWinners(winners) {
+  // take an array of strings representing recent winners and display appropriately
+
+  var ul = $("#recentWinners");
+  ul.html("");
+
+  winners.forEach(function(winner) { 
+    ul.append($("<li />", {
+      "class": "recentWinner",
+      text: winner
+    }));
+  });
+
 }
 
 function joinGame(gameNum) {
@@ -208,10 +228,12 @@ function startGame() {
 
     if (parsed.hasOwnProperty("tick")) { 
       if (parsed["tick"]) {
+        socket.send(newDir);  // we might exit the game due to events in game.tick, so send our update first
+
         game.tick(); 
         draw(game.players, canvas);
+
         game.getPlayerById(myIndex).setDirection(newDir);
-        socket.send(game.getPlayerById(myIndex).direction);
       }
     }
   }
@@ -271,10 +293,14 @@ function startGame() {
       showMessage("You lose!", "Crimson");
       console.log("lost!");
       gameInProgress = false;
-    } else if (game.countLiving() === 1 && game.getPlayerById(myIndex).alive) {
+    }
+    if (game.countLiving() === 1) {
       //globalMessage = createMessage("You win!", "DodgerBlue", canvas);
-      showMessage("You win!", "DodgerBlue");
-      gameInProgress = false;
+      if (game.getPlayerById(myIndex).alive) {
+        showMessage("You win!", "DodgerBlue");
+        gameInProgress = false;
+      }
+      exitGame();
     }
   }
 };

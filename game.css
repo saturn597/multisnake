@@ -19,6 +19,23 @@ body {
   border-radius: 5px;
 }
 
+label {
+  font-weight: bold; 
+}
+
+#recentWinners {
+  display: inline-block;
+  list-style-type: none;
+  padding-left: 10px;
+}
+
+.recentWinner {
+  display: inline-block;
+  padding-right: 5px;
+  padding-left: 5px;
+  border-right: solid black 1px;
+}
+
 #errorMessages {
   display: none;
   color: red;

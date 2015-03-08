@@ -34,6 +34,7 @@ function Game(blockWidth, canvasWidth, canvasHeight) {
   } 
 
   this.kill = function(player) {
+    if (!player.alive) return;
     player.kill();
     this.onKill(player);
   }
@@ -53,7 +54,7 @@ function Game(blockWidth, canvasWidth, canvasHeight) {
   }
 
   this.getLiving = function() {
-    return this.players.filter(function(player) { return player.living });
+    return this.players.filter(function(player) { return player.alive; });
   }
    
   this.tick = function() {
@@ -153,7 +154,7 @@ function Game(blockWidth, canvasWidth, canvasHeight) {
 
       var lastPiece = this.pieces[this.pieces.length - 1];
       var newPiece = { x: lastPiece.x, y: lastPiece.y };
-      
+
       switch (this.direction) {
         case DIRECTIONS.UP:
           newPiece.y -= speed; 
@@ -168,7 +169,11 @@ function Game(blockWidth, canvasWidth, canvasHeight) {
           newPiece.x += speed;
           break;
       }
-      
+     
+      if (!this.infiniteSnake && this.pieces.length > this.maxLen) {
+        this.pieces.shift();
+      }
+
       // if we're exceeding height/width of the canvas, wrap around
       newPiece.x = wrap(newPiece.x, 0, canvasWidth);
       newPiece.y = wrap(newPiece.y, 0, canvasHeight);

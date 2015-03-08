@@ -3,13 +3,16 @@ var gameModule = require('./game.js');
 if (typeof module !== 'undefined' && module.exports)
   module.exports.GameOverseer = GameOverseer;
 
-function Connection(sock, player) {
+function Connection(sock, name, player) {
   // associate a socket with a player's status in the game
+  //
+  // Deal with the fact that we have two things called a "Connection"
+  // Either merge the two or at least give them different names
 
   // basic info
   this.sock = sock;
   this.player = player;
-  this.name = "";
+  this.name = name;
 
   // for convenience
   this.id = player.id;
@@ -36,19 +39,26 @@ function Connection(sock, player) {
 
 }
 
-
-function GameOverseer(sockets) {
+function GameOverseer(playerInfo) {
   var theOverseer = this;  // us
     
   // set up our game
   var game = new gameModule.Game(5, 800, 600);
 
   game.onKill = function() {
-    if (game.countLiving() <= 1) {
+    var stillAlive = getLiving();
+    if (stillAlive.length === 1) {
+      theOverseer.onVictory(stillAlive[0]);
+    }
+    if (stillAlive.length <= 1) {
+      console.log("ending game");
       clearTimeout(timer);
       time = false;
       gameInProgress = false;
     }
+  }
+
+  this.onVictory = function(winner) {
   }
 
   // some useful constants
@@ -60,6 +70,10 @@ function GameOverseer(sockets) {
   var timer;  // timer for the delay between frames
   var gameInProgress = true,
       time = false;  // whether enough time has passed since the last frame to go to the next one
+
+  function getLiving() {
+    return connections.filter(function(c) { return c.player.alive; });
+  }
 
   function endGame() {
   }
@@ -75,8 +89,7 @@ function GameOverseer(sockets) {
     //
     // 1) we've received updated states from ALL clients (so we know whether players have changed direction) 
     // 2) sufficient time has passed since the last update
-
-  
+ 
     for (var i = connections.length - 1; i >= 0; i--) {
       if (connections[i].waiting) 
         return;
@@ -85,14 +98,15 @@ function GameOverseer(sockets) {
     if (!time)
       return;
 
-    updateClients();  // currently updateClients must be done before game.tick
-    game.tick();      // since collisions during game.tick can remove clients
+    game.tick();
+    updateClients();
 
     if (!gameInProgress) return;  // calling game.tick() might have ended the game
 
     // if the game didn't end, restart the timer
     time = false;
     timer = setTimeout(timesUp, 50);
+
   }
 
 
@@ -181,8 +195,8 @@ function GameOverseer(sockets) {
   }
 
   // create our Connection objects
-  for (var socketNum = sockets.length - 1; socketNum >= 0; socketNum--) {
-    var connection = new Connection(sockets[socketNum], addPlayer());
+  for (var playerNum = playerInfo.length - 1; playerNum >= 0; playerNum--) {
+    var connection = new Connection(playerInfo[playerNum].socket, playerInfo[playerNum].name, addPlayer());
     setConnectionListeners(connection);
     connections.push(connection);
   }
