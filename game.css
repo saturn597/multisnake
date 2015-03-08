@@ -19,6 +19,10 @@ body {
   border-radius: 5px;
 }
 
+.selectedGame {
+  border: solid red 1px;
+}
+
 label {
   font-weight: bold; 
 }

@@ -77,7 +77,8 @@ $('document').ready(function() {
 
 function createGameLink(num, name, count) {
   var li = $("<li />", {
-    "class": "gameListItem"  
+    "class": "gameListItem",
+    id: "gameListItem" + num
   });
   
   var a = $("<a />", {
@@ -128,14 +129,15 @@ function joinGame(gameNum) {
     socket.send("cancel");
     currentGame = null;
     $("#playerName").attr("disabled", false);
+    $("#gameListItem" + gameNum).removeClass("selectedGame");
 
   } else {
     
-    // otherwise, add us to the wait list for that game
+    // otherwise, ask server to add us to the wait list for that game
     console.log("sending join");
     socket.send(JSON.stringify({ "join": gameNum, "name": $("#playerName").val() }));
     currentGame = gameNum;
-
+    $("#gameListItem" + gameNum).addClass("selectedGame");
     $("#playerName").attr("disabled", true);
   }
 }

@@ -11,6 +11,7 @@ var potentialGames = [
   { name: "3 player game", targetCount: 3, waitingToPlay: [] }
 ];
 
+var connections = [];
 var recentWinners = [];
 
 function Connection(socket) {
@@ -30,12 +31,16 @@ function Connection(socket) {
   }
 }
 
-var connectionData = [];  // data associated with each socket that's not yet playing a game
+function setSocketListeners(connection) {
+  connection.socket.onmessage = getOnMessage(connection);
+  connection.socket.onclose = getOnClose(connection);
+  connection.socket.onerror = getOnError(connection);
+}
 
 function addConnection(socket) {
   // we have a new socket to keep track of
   var newConnection = new Connection(socket);
-  connectionData.push(newConnection);
+  connections.push(newConnection);
   sendGameInfo(socket);
   sendRecentWinners(socket);
   setSocketListeners(newConnection);
@@ -44,24 +49,15 @@ function addConnection(socket) {
 wss.on('connection', addConnection);
 
 function removeConnection(connection) {
-  // TODO: Note asymmetry with addConnection - can this be fixed?
-  var snpindex = connectionData.indexOf(connection);
+  // TODO: Note asymmetry with addConnection (connection versus socket) - can this be fixed?
+  var snpindex = connections.indexOf(connection);
 
   if (snpindex === -1) {
     console.log("ERROR: attempted to remove connection we didn't have!");
     return;
   }
 
-  connectionData.splice(snpindex, 1);
-}
-
-function sendGameInfo(sock) {
-  // wrap up the information we want to send about the currently available games
-  
-  sock.send(JSON.stringify(
-    { "games": potentialGames.map(gameInfoToSend) } 
-  ));
-
+  connections.splice(snpindex, 1);
 }
 
 function gameInfoToSend(game) {
@@ -72,9 +68,26 @@ function gameInfoToSend(game) {
   }
 }
 
+function sendGameInfo(sock) {
+  // send socket sock a JSON string describing the games they can try to join
+
+  sock.send(JSON.stringify(
+    { "games": potentialGames.map(gameInfoToSend) } 
+  ));
+
+}
+
 function sendRecentWinners(sock) {
   console.log("Sending recent winners");
   sock.send(JSON.stringify( { "recentWinners": recentWinners }));
+}
+
+function tellConnections(msg, connections) {  // TODO: use this instead of tellAllClients in gameoverseer too
+  connections.forEach(function(connection) { connection.send(msg); });
+}
+
+function announceNewCount(gameNumber, count) {
+  tellConnections(JSON.stringify({ newCount: [ gameNumber, count ] }), connections);
 }
 
 function removeConnectionFromPotentialGames(connection) {
@@ -85,14 +98,6 @@ function removeConnectionFromPotentialGames(connection) {
       announceNewCount(i, potentialGames[i].waitingToPlay.length);  // tell everyone if we're removing someone
     }
   }
-}
-
-function announceNewCount(gameNumber, count) {
-  tellConnections(JSON.stringify({ newCount: [ gameNumber, count ] }), connectionData);
-}
-
-function tellConnections(msg, connections) {  // use this instead of tellAllClients in gameoverseer too
-  connections.forEach(function(connection) { connection.send(msg); });
 }
 
 function getOnMessage(connection) {
@@ -195,12 +200,6 @@ function getOnError(connection) {
     console.log("The error was this: " + e);
     connection.bail();
   }
-}
-
-function setSocketListeners(connection) {
-  connection.socket.onmessage = getOnMessage(connection);
-  connection.socket.onclose = getOnClose(connection);
-  connection.socket.onerror = getOnError(connection);
 }
 
 console.log("ready to accept connections");
