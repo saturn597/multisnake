@@ -127,17 +127,18 @@ function joinGame(gameNum) {
 
     // if user clicks on the join link for a game we're already waiting for, cancel waiting for that game
     socket.send("cancel");
-    currentGame = null;
     $("#playerName").attr("disabled", false);
     $("#gameListItem" + gameNum).removeClass("selectedGame");
+    currentGame = null;
 
   } else {
     
     // otherwise, ask server to add us to the wait list for that game
     console.log("sending join");
     socket.send(JSON.stringify({ "join": gameNum, "name": $("#playerName").val() }));
-    currentGame = gameNum;
     $("#gameListItem" + gameNum).addClass("selectedGame");
+    $("#gameListItem" + currentGame).removeClass("selectedGame");
+    currentGame = gameNum;
     $("#playerName").attr("disabled", true);
   }
 }
@@ -152,7 +153,8 @@ function resetDisplay() {
   var canvas = $('#canvas')[0];
   var context = canvas.getContext('2d');
 
-  // reset the gameMessages div and the canvas opacity in case we were showing a message 
+  // reset the gameMessages div and the canvas opacity in case we were showing a message
+  // or setting the opacity 
   $("#gameMessages").text("");
   $('#canvas').css("opacity", "1");
 
