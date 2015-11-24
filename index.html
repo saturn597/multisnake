@@ -3,8 +3,8 @@
   <head>
     <link rel="stylesheet" type="text/css" href="game.css">
     <meta charset="UTF-8">
-    <title>Websockets</title>
-    <script type="text/javascript" src="jquery.js"></script>
+    <title>Multiplayer Snake</title>
+    <script type="text/javascript" src="//code.jquery.com/jquery-1.11.3.min.js"></script>
     <script type="text/javascript" src="game.js"></script>
     <script type="text/javascript" src="client.js"></script>
   </head>
@@ -16,8 +16,8 @@
       <p><a href = "javascript:connect()">Try again?</a></p>
     </div>
     <div id = "gameMessagesContainer"><div id = "gameMessages"></div></div>
-    <div id = "nameArea">Name: <input type = "text" id = "playerName"></input></div>
+    <div id = "nameArea">Name: <input type = "text" id = "playerName"><div>
     <label>Recent winners:</label><ul id = "recentWinners"></ul>
-    <div id = "description"><h2>Snake game</h2><p>To play, click the button indicating how many players you want to battle. Once enough others are waiting for a game with that many players, the game will start.</p><p>Your snake will appear <span class = "playerColor">red</span> and your opponents' snakes <span class = "opponentColor">dark blue</span>. Use the arrow keys to change direction. Try to force your opponents to collide while avoiding running into anything yourself.</p></div>
+    <div id = "description"><h2>Multiplayer Snake</h2><p>To play, click the button above indicating how many players you want to battle. Once enough others are waiting for a game with that number of players, the game will start.</p><p>Your snake will appear <span class = "playerColor">red</span> and your opponents' snakes <span class = "opponentColor">dark blue</span>. Use the arrow keys to change direction. <p>Try to force your opponents to collide while avoiding running into anything yourself. If you collide with your snake or with one of your opponents' snakes, your snake dies and you are out of the game. You win if all of your opponents have died while you are still alive. If you click "Exit Game" while the game is in progress, you forfeit the game (and one of your opponents will win by default if they are the only ones left).</p><p>You can select a name for yourself. The names of the last 10 winners will be displayed to other players.</p><p>Good luck!</p></div>
   </body>
 </html>
