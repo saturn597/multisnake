@@ -154,7 +154,7 @@ function GameOverseer(playerInfo) {
         return;
       }
             
-      // make sure the string we represents an integer in the format we expect
+      // make sure the string we receive represents an integer in the format we expect
       // if not, kill this connection
       if (!/^\d+$/.test(message.data)) {
         console.log("ERROR: Received a message we didn't understand during a game");

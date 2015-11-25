@@ -144,6 +144,7 @@ function joinGame(gameNum) {
 }
 
 function exitGame() {
+  console.log('exitGame called');
   socket.onmessage = waitingOnmessage;
   socket.send("leave");
 }
@@ -298,7 +299,7 @@ function startGame() {
       console.log("lost!");
       gameInProgress = false;
     }
-    if (game.countLiving() === 1) {
+    if (game.countLiving() <= 1) {
       //globalMessage = createMessage("You win!", "DodgerBlue", canvas);
       if (game.getPlayerById(myIndex).alive) {
         showMessage("You win!", "DodgerBlue");
