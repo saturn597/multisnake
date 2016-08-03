@@ -1,4 +1,4 @@
-var gameModule = require('./game.js');
+var gameModule = require('./public/game.js');
 
 if (typeof module !== 'undefined' && module.exports)
   module.exports.GameOverseer = GameOverseer;

@@ -1,0 +1,30 @@
+{
+  "name": "multiuser-snake",
+  "version": "1.0.0",
+  "description": "What this is ===================== This is a multiplayer game of Snake using websockets. The websockets server relies on node.js and the node module [ws](https://github.com/websockets/ws).",
+  "main": "server.js",
+  "engines": {
+    "node": "4.1.1"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/saturn597/multisnake.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/saturn597/multisnake/issues"
+  },
+  "homepage": "https://github.com/saturn597/multisnake#readme",
+  "dependencies": {
+    "bufferutil": "1.2.1",
+    "express": "4.14.0",
+    "utf-8-validate": "1.2.1",
+    "validator": "^5.5.0",
+    "ws": "^1.1.1"
+  }
+}

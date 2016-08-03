@@ -62,7 +62,8 @@ function socketOpen() {
 }
 
 function connect() {
-  socket = new WebSocket("ws://localhost:8080/");
+  var HOST = location.origin.replace(/^http/, 'ws')
+  socket = new WebSocket(HOST);
   socket.onopen = socketOpen;
   socket.onmessage = waitingOnmessage;
   socket.onclose = socketClosed;
@@ -80,7 +81,7 @@ function createGameLink(num, name, count) {
     "class": "gameListItem",
     id: "gameListItem" + num
   });
-  
+
   var a = $("<a />", {
     id: "gameLink" + num,
     href: "javascript:joinGame(" + num + ")"

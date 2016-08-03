@@ -1,7 +1,18 @@
 // set up modules
+var express = require('express');
+var path = require('path');
+var validator = require('validator');
+
+var PORT = process.env.PORT || 3000;
+var PUBLIC = path.join(__dirname, 'public');
+
+var server = express()
+    .use((express.static(PUBLIC)))
+    .listen(PORT, () => console.log(`Listening on ${ PORT }`));
+
 var WebSocket = require('ws');
 var WebSocketServer = require('ws').Server, 
-  wss = new WebSocketServer({ port: 8080 });
+  wss = new WebSocketServer({ server });
 
 var GameOverseer = require('./gameoverseer.js');
 
@@ -132,7 +143,7 @@ function getOnMessage(connection) {
         return;
       }
 
-      connection.name = parsed.name;  
+      connection.name = validator.escape(parsed.name);
 
       // if the player left their name blank, set it to a default
       if (parsed.name == "") connection.name = "Anon";
