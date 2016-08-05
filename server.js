@@ -1,7 +1,6 @@
 // set up modules
 var express = require('express');
 var path = require('path');
-var validator = require('validator');
 
 var PORT = process.env.PORT || 3000;
 var PUBLIC = path.join(__dirname, 'public');
@@ -148,7 +147,7 @@ function getOnMessage(connection) {
         return;
       }
 
-      connection.name = validator.escape(parsed.name);
+      connection.name = parsed.name.slice(0, 20);  // Prevent really long names
 
       // if the player left their name blank, set it to a default
       if (parsed.name == "") connection.name = "Anon";

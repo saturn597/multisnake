@@ -142,7 +142,6 @@ function updateRecentWinners(winners) {
 
 function joinGame(gameNum) {
   if (gameNum === currentGame) {
-
     // if user clicks on the join link for a game we're already waiting for, cancel waiting for that game
     socket.send("cancel");
     $("#playerName").attr("disabled", false);
@@ -150,7 +149,6 @@ function joinGame(gameNum) {
     currentGame = null;
 
   } else {
-    
     // otherwise, ask server to add us to the wait list for that game
     console.log("sending join");
     socket.send(JSON.stringify({ "join": gameNum, "name": $("#playerName").val() }));
