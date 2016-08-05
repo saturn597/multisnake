@@ -121,6 +121,11 @@ function getOnMessage(connection) {
       return;
     }
 
+    if (msg.data === "ping") {
+      connection.send("pong");
+      return;
+    }
+
     try {
       var parsed = JSON.parse(msg.data);
     } catch (e) {

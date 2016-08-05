@@ -13,9 +13,24 @@ var opponentColor = "DarkBlue";
 
 var currentGame;  // the game we're currently waiting on
 
+var pingDelay = 30000;
+var pingTimer;
+
+var ping = function() {
+  if (socket.readyState === 1) {
+    socket.send('ping');
+    pingTimer = window.setTimeout(ping, pingDelay);
+  } 
+}
+
 var waitingOnmessage = function(msg) {
 
-  if (msg.data == "startGame") {
+  if (msg.data === "pong") {
+    console.log("pong received");
+    return;
+  }
+
+  if (msg.data === "startGame") {
     $("#gameList").html("<h1><a href = 'javascript:exitGame()'>Exit game</a></h1>"); 
     startGame();
     return;
@@ -52,11 +67,13 @@ var waitingOnmessage = function(msg) {
 };
 
 function socketClosed() {
+  window.clearTimeout(pingTimer);
   $("#gameList").css("display", "none");
   $("#errorMessages").css("display", "table-cell");
 }
 
 function socketOpen() {
+  pingTimer = window.setTimeout(ping, pingDelay);
   $("#gameList").css("display", "block");
   $("#errorMessages").css("display", "none");
 }
@@ -148,6 +165,7 @@ function exitGame() {
   console.log('exitGame called');
   socket.onmessage = waitingOnmessage;
   socket.send("leave");
+  window.setTimeout(ping, pingDelay);
 }
 
 function resetDisplay() {
@@ -180,6 +198,8 @@ function startGame() {
 
   var myIndex;
   var newDir;
+
+  window.clearTimeout(pingTimer);
 
   resetDisplay();
   
