@@ -13,15 +13,27 @@ var opponentColor = "DarkBlue";
 
 var currentGame;  // the game we're currently waiting on
 
-var pingDelay = 30000;
-var pingTimer;
+var pingTimer = (function() {
+  var pingDelay = 30000;
+  var timeoutID;
 
-var ping = function() {
-  if (socket.readyState === 1) {
-    socket.send('ping');
-    pingTimer = window.setTimeout(ping, pingDelay);
-  } 
-}
+  var ping = function() {
+    if (socket.readyState === 1) {
+      socket.send('ping');
+      timeoutID = window.setTimeout(ping, pingDelay);
+    } 
+  };
+
+  return {
+      start: function() {
+                 window.clearTimeout(timeoutID);  // ensure only one timeout going at a time
+                 timeoutID = window.setTimeout(ping, pingDelay);
+             },
+      stop: function() {
+                window.clearTimeout(timeoutID);
+            }
+  };
+})();
 
 var waitingOnmessage = function(msg) {
 
@@ -67,13 +79,13 @@ var waitingOnmessage = function(msg) {
 };
 
 function socketClosed() {
-  window.clearTimeout(pingTimer);
+  pingTimer.stop();
   $("#gameList").css("display", "none");
   $("#errorMessages").css("display", "table-cell");
 }
 
 function socketOpen() {
-  pingTimer = window.setTimeout(ping, pingDelay);
+  pingTimer.start();
   $("#gameList").css("display", "block");
   $("#errorMessages").css("display", "none");
 }
@@ -163,7 +175,7 @@ function exitGame() {
   console.log('exitGame called');
   socket.onmessage = waitingOnmessage;
   socket.send("leave");
-  window.setTimeout(ping, pingDelay);
+  pingTimer.start();
 }
 
 function resetDisplay() {
@@ -197,8 +209,7 @@ function startGame() {
   var myIndex;
   var newDir;
 
-  window.clearTimeout(pingTimer);
-
+  pingTimer.stop();
   resetDisplay();
   
   socket.onmessage = function(msg) {
