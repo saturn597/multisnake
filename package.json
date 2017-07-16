@@ -4,7 +4,7 @@
   "description": "What this is ===================== This is a multiplayer game of Snake using websockets. The websockets server relies on node.js and the node module [ws](https://github.com/websockets/ws).",
   "main": "server.js",
   "engines": {
-    "node": "4.1.1"
+    "node": "6.11.1"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
