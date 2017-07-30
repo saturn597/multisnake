@@ -99,6 +99,14 @@ function connect() {
 }
 
 $('document').ready(function() {
+  var canvas = $("#canvas")[0];
+  canvas.height = Settings.gameHeight;
+  canvas.width = Settings.gameWidth;
+
+  $("#gameMessagesContainer").css({
+      height: Settings.gameHeight,
+      width: Settings.gameWidth
+  });
 
   $(".playerColor").css({"color": playerColor, "font-weight": "bold"});
   $(".opponentColor").css({"color": opponentColor, "font-weight": "bold"});
@@ -204,7 +212,7 @@ function startGame() {
   var canvas = $('#canvas')[0];
   
   var blockWidth = 5;
-  var game = new Game(blockWidth, canvas.width, canvas.height);
+  var game = new Game(Settings.blockSize, canvas.width, canvas.height);
 
   var myIndex;
   var newDir;

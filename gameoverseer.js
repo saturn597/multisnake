@@ -1,4 +1,5 @@
 var gameModule = require('./public/game.js');
+var Settings = require('./public/settings.js').Settings;
 
 if (typeof module !== 'undefined' && module.exports)
   module.exports.GameOverseer = GameOverseer;
@@ -43,7 +44,11 @@ function GameOverseer(playerInfo) {
   var theOverseer = this;  // us
     
   // set up our game
-  var game = new gameModule.Game(5, 800, 600);
+  var game = new gameModule.Game(
+      Settings.blockSize,
+      Settings.gameWidth,
+      Settings.gameHeight
+  );
 
   game.onKill = function() {
     var stillAlive = getLiving();
